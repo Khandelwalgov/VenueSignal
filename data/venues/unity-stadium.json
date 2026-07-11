@@ -1,0 +1,635 @@
+{
+  "id": "unity-stadium",
+  "name": "Unity Stadium",
+  "description": "A synthetic venue for operational incident reasoning and accessibility impact analysis.",
+  "synthetic": true,
+  "schemaVersion": "1.0",
+  "venueVersion": "1.0",
+  "levels": [
+    {
+      "id": "L0",
+      "venueId": "unity-stadium",
+      "label": "Level 0 - Entry and ground concourse",
+      "index": 0,
+      "description": "Ground floor including primary entrances and security."
+    },
+    {
+      "id": "L1",
+      "venueId": "unity-stadium",
+      "label": "Level 1 - Lower seating concourse",
+      "index": 1,
+      "description": "Lower bowl seating access and amenities."
+    },
+    {
+      "id": "L2",
+      "venueId": "unity-stadium",
+      "label": "Level 2 - Upper seating concourse",
+      "index": 2,
+      "description": "Upper bowl seating access."
+    }
+  ],
+  "zones": [
+    {
+      "id": "Z_N_SEC",
+      "venueId": "unity-stadium",
+      "levelId": "L0",
+      "label": "North Security Zone",
+      "type": "SECURITY",
+      "capacity": 5000,
+      "occupancyPercent": 10.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_N_GATE", "N_N_SEC_IN"],
+      "assetIds": []
+    },
+    {
+      "id": "Z_S_SEC",
+      "venueId": "unity-stadium",
+      "levelId": "L0",
+      "label": "South Security Zone",
+      "type": "SECURITY",
+      "capacity": 5000,
+      "occupancyPercent": 5.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_S_GATE", "N_S_SEC_IN"],
+      "assetIds": []
+    },
+    {
+      "id": "Z_G_CONCOURSE",
+      "venueId": "unity-stadium",
+      "levelId": "L0",
+      "label": "Ground Concourse",
+      "type": "CONCOURSE",
+      "capacity": 15000,
+      "occupancyPercent": 20.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L0_W_ACC_ENT", "N_L0_E_GATE", "N_L0_CEN", "N_L0_LIFT_1", "N_L0_LIFT_2", "N_L0_LIFT_3", "N_L0_STAIR_1", "N_L0_STAIR_2", "N_L0_ESC_1", "N_L0_MED_1", "N_L0_WAIT_1"],
+      "assetIds": ["A_LIFT_1", "A_LIFT_2", "A_LIFT_3", "A_STAIR_1", "A_STAIR_2", "A_ESC_1"]
+    },
+    {
+      "id": "Z_L1_E_CONCOURSE",
+      "venueId": "unity-stadium",
+      "levelId": "L1",
+      "label": "East Concourse L1",
+      "type": "CONCOURSE",
+      "capacity": 8000,
+      "occupancyPercent": 15.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L1_E_CEN", "N_L1_LIFT_1", "N_L1_STAIR_1", "N_L1_ESC_1", "N_L1_STAIR_3"],
+      "assetIds": ["A_LIFT_1", "A_STAIR_1", "A_ESC_1", "A_STAIR_3"]
+    },
+    {
+      "id": "Z_L1_W_CONCOURSE",
+      "venueId": "unity-stadium",
+      "levelId": "L1",
+      "label": "West Concourse L1",
+      "type": "CONCOURSE",
+      "capacity": 8000,
+      "occupancyPercent": 10.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L1_W_CEN", "N_L1_LIFT_2", "N_L1_AR1", "N_L1_MED_2", "N_L1_Q1", "N_L1_ESC_2"],
+      "assetIds": ["A_LIFT_2", "A_AR1", "A_ESC_2"]
+    },
+    {
+      "id": "Z_SEC_101_108",
+      "venueId": "unity-stadium",
+      "levelId": "L1",
+      "label": "Sections 101-108",
+      "type": "SEATING",
+      "capacity": 8000,
+      "occupancyPercent": 5.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L1_SEC_101_108"],
+      "assetIds": []
+    },
+    {
+      "id": "Z_SEC_109_116",
+      "venueId": "unity-stadium",
+      "levelId": "L1",
+      "label": "Sections 109-116",
+      "type": "SEATING",
+      "capacity": 8000,
+      "occupancyPercent": 5.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L1_SEC_109_116"],
+      "assetIds": []
+    },
+    {
+      "id": "Z_L2_E_CONCOURSE",
+      "venueId": "unity-stadium",
+      "levelId": "L2",
+      "label": "Upper East Concourse L2",
+      "type": "CONCOURSE",
+      "capacity": 5000,
+      "occupancyPercent": 0.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L2_E_CEN", "N_L2_LIFT_3", "N_L2_STAIR_2", "N_L2_STAIR_3"],
+      "assetIds": ["A_LIFT_3", "A_STAIR_2", "A_STAIR_3"]
+    },
+    {
+      "id": "Z_L2_W_CONCOURSE",
+      "venueId": "unity-stadium",
+      "levelId": "L2",
+      "label": "Upper West Concourse L2",
+      "type": "CONCOURSE",
+      "capacity": 5000,
+      "occupancyPercent": 0.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L2_W_CEN", "N_L2_LIFT_2", "N_L2_AR2", "N_L2_W3", "N_L2_ESC_2", "N_L2_WAIT_2"],
+      "assetIds": ["A_LIFT_2", "A_AR2", "A_ESC_2"]
+    },
+    {
+      "id": "Z_SEC_201_208",
+      "venueId": "unity-stadium",
+      "levelId": "L2",
+      "label": "Sections 201-208",
+      "type": "SEATING",
+      "capacity": 10000,
+      "occupancyPercent": 0.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L2_SEC_201_208"],
+      "assetIds": []
+    },
+    {
+      "id": "Z_SEC_209_218",
+      "venueId": "unity-stadium",
+      "levelId": "L2",
+      "label": "Sections 209-218",
+      "type": "SEATING",
+      "capacity": 12000,
+      "occupancyPercent": 0.0,
+      "status": "NORMAL",
+      "nodeIds": ["N_L2_SEC_209_218"],
+      "assetIds": []
+    }
+  ],
+  "nodes": [
+    {
+      "id": "N_N_GATE", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_N_SEC",
+      "label": "North Gate", "type": "GATE", "x": 500, "y": 50, "accessible": true, "staffOnly": false,
+      "capacity": 5000, "status": "OPEN", "textDescription": "Main public entrance from the north."
+    },
+    {
+      "id": "N_N_SEC_IN", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_N_SEC",
+      "label": "North Security Scanners", "type": "CHECKPOINT", "x": 500, "y": 150, "accessible": true, "staffOnly": false,
+      "capacity": 5000, "status": "OPEN", "textDescription": "Security screening for North Gate."
+    },
+    {
+      "id": "N_S_GATE", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_S_SEC",
+      "label": "South Gate", "type": "GATE", "x": 500, "y": 950, "accessible": true, "staffOnly": false,
+      "capacity": 5000, "status": "OPEN", "textDescription": "Main public entrance from the south."
+    },
+    {
+      "id": "N_S_SEC_IN", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_S_SEC",
+      "label": "South Security Scanners", "type": "CHECKPOINT", "x": 500, "y": 850, "accessible": true, "staffOnly": false,
+      "capacity": 5000, "status": "OPEN", "textDescription": "Security screening for South Gate."
+    },
+    {
+      "id": "N_L0_E_GATE", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "East Gate", "type": "GATE", "x": 950, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 3000, "status": "OPEN", "textDescription": "Secondary entrance from the east."
+    },
+    {
+      "id": "N_L0_W_ACC_ENT", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "West Accessible Entrance", "type": "GATE", "x": 50, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 1000, "status": "OPEN", "textDescription": "Dedicated accessible entrance."
+    },
+    {
+      "id": "N_L0_CEN", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "L0 Main Concourse Hub", "type": "HUB", "x": 500, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 10000, "status": "OPEN", "textDescription": "Central circulation hub on Level 0."
+    },
+    {
+      "id": "N_L0_LIFT_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Lift L1 (L0)", "type": "LIFT", "x": 700, "y": 300, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "assetId": "A_LIFT_1", "textDescription": "Access to Lift L1 from Level 0."
+    },
+    {
+      "id": "N_L0_LIFT_2", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Lift L2 (L0)", "type": "LIFT", "x": 300, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "assetId": "A_LIFT_2", "textDescription": "Access to Lift L2 from Level 0. Crucial for West concourse access."
+    },
+    {
+      "id": "N_L0_LIFT_3", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Lift L3 (L0)", "type": "LIFT", "x": 700, "y": 700, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "assetId": "A_LIFT_3", "textDescription": "Access to Lift L3 from Level 0."
+    },
+    {
+      "id": "N_L0_STAIR_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Stair S1 (L0)", "type": "STAIRS", "x": 800, "y": 300, "accessible": false, "staffOnly": false,
+      "capacity": 200, "status": "OPEN", "assetId": "A_STAIR_1", "textDescription": "Access to Stair S1 from Level 0."
+    },
+    {
+      "id": "N_L0_STAIR_2", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Stair S2 (L0)", "type": "STAIRS", "x": 800, "y": 700, "accessible": false, "staffOnly": false,
+      "capacity": 200, "status": "OPEN", "assetId": "A_STAIR_2", "textDescription": "Access to Stair S2 from Level 0."
+    },
+    {
+      "id": "N_L0_ESC_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Escalator E1 (L0)", "type": "ESCALATOR", "x": 750, "y": 500, "accessible": false, "staffOnly": false,
+      "capacity": 150, "status": "OPEN", "assetId": "A_ESC_1", "textDescription": "Access to Escalator E1 from Level 0."
+    },
+    {
+      "id": "N_L0_MED_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Medical Point M1", "type": "AMENITY", "x": 400, "y": 300, "accessible": true, "staffOnly": false,
+      "capacity": 50, "status": "OPEN", "textDescription": "Primary medical point."
+    },
+    {
+      "id": "N_L0_WAIT_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "label": "Safe Waiting Point W1", "type": "AMENITY", "x": 600, "y": 300, "accessible": true, "staffOnly": false,
+      "capacity": 100, "status": "OPEN", "textDescription": "Safe waiting area."
+    },
+    {
+      "id": "N_L1_E_CEN", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_E_CONCOURSE",
+      "label": "East Concourse Hub (L1)", "type": "HUB", "x": 750, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 3000, "status": "OPEN", "textDescription": "Central circulation hub on East Level 1."
+    },
+    {
+      "id": "N_L1_LIFT_1", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_E_CONCOURSE",
+      "label": "Lift L1 (L1)", "type": "LIFT", "x": 700, "y": 300, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "assetId": "A_LIFT_1", "textDescription": "Access to Lift L1 from Level 1."
+    },
+    {
+      "id": "N_L1_STAIR_1", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_E_CONCOURSE",
+      "label": "Stair S1 (L1)", "type": "STAIRS", "x": 800, "y": 300, "accessible": false, "staffOnly": false,
+      "capacity": 200, "status": "OPEN", "assetId": "A_STAIR_1", "textDescription": "Access to Stair S1 from Level 1."
+    },
+    {
+      "id": "N_L1_STAIR_3", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_E_CONCOURSE",
+      "label": "Stair S3 (L1)", "type": "STAIRS", "x": 850, "y": 500, "accessible": false, "staffOnly": false,
+      "capacity": 200, "status": "OPEN", "assetId": "A_STAIR_3", "textDescription": "Access to Stair S3 from Level 1."
+    },
+    {
+      "id": "N_L1_ESC_1", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_E_CONCOURSE",
+      "label": "Escalator E1 (L1)", "type": "ESCALATOR", "x": 750, "y": 500, "accessible": false, "staffOnly": false,
+      "capacity": 150, "status": "OPEN", "assetId": "A_ESC_1", "textDescription": "Access to Escalator E1 from Level 1."
+    },
+    {
+      "id": "N_L1_W_CEN", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "label": "West Concourse Hub (L1)", "type": "HUB", "x": 250, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 3000, "status": "OPEN", "textDescription": "Central circulation hub on West Level 1."
+    },
+    {
+      "id": "N_L1_LIFT_2", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "label": "Lift L2 (L1)", "type": "LIFT", "x": 300, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "assetId": "A_LIFT_2", "textDescription": "Access to Lift L2 from Level 1."
+    },
+    {
+      "id": "N_L1_ESC_2", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "label": "Escalator E2 (L1)", "type": "ESCALATOR", "x": 250, "y": 400, "accessible": false, "staffOnly": false,
+      "capacity": 150, "status": "OPEN", "assetId": "A_ESC_2", "textDescription": "Access to Escalator E2 from Level 1."
+    },
+    {
+      "id": "N_L1_AR1", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "label": "Accessible Restroom AR1", "type": "RESTROOM", "x": 200, "y": 300, "accessible": true, "staffOnly": false,
+      "capacity": 5, "status": "OPEN", "assetId": "A_AR1", "textDescription": "Accessible restroom on Level 1 West."
+    },
+    {
+      "id": "N_L1_MED_2", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "label": "Medical Point M2", "type": "AMENITY", "x": 200, "y": 700, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "textDescription": "Secondary medical point."
+    },
+    {
+      "id": "N_L1_Q1", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "label": "Quiet Assistance Area Q1", "type": "AMENITY", "x": 100, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 15, "status": "OPEN", "textDescription": "Quiet area for neurodivergent attendees."
+    },
+    {
+      "id": "N_L1_SEC_101_108", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_SEC_101_108",
+      "label": "Sections 101-108", "type": "SEATING", "x": 750, "y": 150, "accessible": true, "staffOnly": false,
+      "capacity": 8000, "status": "OPEN", "textDescription": "East lower bowl seating."
+    },
+    {
+      "id": "N_L1_SEC_109_116", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_SEC_109_116",
+      "label": "Sections 109-116", "type": "SEATING", "x": 250, "y": 150, "accessible": true, "staffOnly": false,
+      "capacity": 8000, "status": "OPEN", "textDescription": "West lower bowl seating."
+    },
+    {
+      "id": "N_L2_E_CEN", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_E_CONCOURSE",
+      "label": "East Concourse Hub (L2)", "type": "HUB", "x": 750, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 3000, "status": "OPEN", "textDescription": "Central circulation hub on East Level 2."
+    },
+    {
+      "id": "N_L2_LIFT_3", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_E_CONCOURSE",
+      "label": "Lift L3 (L2)", "type": "LIFT", "x": 700, "y": 700, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "assetId": "A_LIFT_3", "textDescription": "Access to Lift L3 from Level 2."
+    },
+    {
+      "id": "N_L2_STAIR_2", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_E_CONCOURSE",
+      "label": "Stair S2 (L2)", "type": "STAIRS", "x": 800, "y": 700, "accessible": false, "staffOnly": false,
+      "capacity": 200, "status": "OPEN", "assetId": "A_STAIR_2", "textDescription": "Access to Stair S2 from Level 2."
+    },
+    {
+      "id": "N_L2_STAIR_3", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_E_CONCOURSE",
+      "label": "Stair S3 (L2)", "type": "STAIRS", "x": 850, "y": 500, "accessible": false, "staffOnly": false,
+      "capacity": 200, "status": "OPEN", "assetId": "A_STAIR_3", "textDescription": "Access to Stair S3 from Level 2."
+    },
+    {
+      "id": "N_L2_W_CEN", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "label": "West Concourse Hub (L2)", "type": "HUB", "x": 250, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 3000, "status": "OPEN", "textDescription": "Central circulation hub on West Level 2."
+    },
+    {
+      "id": "N_L2_LIFT_2", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "label": "Lift L2 (L2)", "type": "LIFT", "x": 300, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 20, "status": "OPEN", "assetId": "A_LIFT_2", "textDescription": "Access to Lift L2 from Level 2."
+    },
+    {
+      "id": "N_L2_ESC_2", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "label": "Escalator E2 (L2)", "type": "ESCALATOR", "x": 250, "y": 400, "accessible": false, "staffOnly": false,
+      "capacity": 150, "status": "OPEN", "assetId": "A_ESC_2", "textDescription": "Access to Escalator E2 from Level 2."
+    },
+    {
+      "id": "N_L2_AR2", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "label": "Accessible Restroom AR2", "type": "RESTROOM", "x": 200, "y": 300, "accessible": true, "staffOnly": false,
+      "capacity": 5, "status": "OPEN", "assetId": "A_AR2", "textDescription": "Accessible restroom on Level 2 West."
+    },
+    {
+      "id": "N_L2_W3", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "label": "Corridor W3", "type": "CORRIDOR", "x": 250, "y": 250, "accessible": true, "staffOnly": false,
+      "capacity": 1000, "status": "OPEN", "textDescription": "Main corridor connecting West Concourse to Sections 209-218."
+    },
+    {
+      "id": "N_L2_WAIT_2", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "label": "Safe Waiting Point W2", "type": "AMENITY", "x": 100, "y": 500, "accessible": true, "staffOnly": false,
+      "capacity": 100, "status": "OPEN", "textDescription": "Safe waiting area on L2."
+    },
+    {
+      "id": "N_L2_SEC_201_208", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_SEC_201_208",
+      "label": "Sections 201-208", "type": "SEATING", "x": 750, "y": 150, "accessible": true, "staffOnly": false,
+      "capacity": 10000, "status": "OPEN", "textDescription": "East upper bowl seating."
+    },
+    {
+      "id": "N_L2_SEC_209_218", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_SEC_209_218",
+      "label": "Sections 209-218", "type": "SEATING", "x": 250, "y": 100, "accessible": true, "staffOnly": false,
+      "capacity": 12000, "status": "OPEN", "textDescription": "West upper bowl seating."
+    }
+  ],
+  "edges": [
+    {
+      "id": "E_N_GATE_TO_SEC", "fromNodeId": "N_N_GATE", "toNodeId": "N_N_SEC_IN",
+      "distanceMeters": 20.0, "estimatedSeconds": 30.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 1000, "currentCrowdPercent": 5.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "textDescription": "Path from North Gate to Security."
+    },
+    {
+      "id": "E_N_SEC_TO_CEN", "fromNodeId": "N_N_SEC_IN", "toNodeId": "N_L0_CEN",
+      "distanceMeters": 100.0, "estimatedSeconds": 90.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 2000, "currentCrowdPercent": 10.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": true,
+      "textDescription": "Path from Security to Main Concourse."
+    },
+    {
+      "id": "E_S_GATE_TO_SEC", "fromNodeId": "N_S_GATE", "toNodeId": "N_S_SEC_IN",
+      "distanceMeters": 20.0, "estimatedSeconds": 30.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 1000, "currentCrowdPercent": 5.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "textDescription": "Path from South Gate to Security."
+    },
+    {
+      "id": "E_S_SEC_TO_CEN", "fromNodeId": "N_S_SEC_IN", "toNodeId": "N_L0_CEN",
+      "distanceMeters": 100.0, "estimatedSeconds": 90.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 2000, "currentCrowdPercent": 10.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": true,
+      "textDescription": "Path from South Security to Main Concourse."
+    },
+    {
+      "id": "E_E_GATE_TO_CEN", "fromNodeId": "N_L0_E_GATE", "toNodeId": "N_L0_CEN",
+      "distanceMeters": 80.0, "estimatedSeconds": 75.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 1500, "currentCrowdPercent": 8.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "East entrance path."
+    },
+    {
+      "id": "E_W_ACC_TO_CEN", "fromNodeId": "N_L0_W_ACC_ENT", "toNodeId": "N_L0_CEN",
+      "distanceMeters": 60.0, "estimatedSeconds": 60.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 500, "currentCrowdPercent": 2.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": true,
+      "textDescription": "West accessible entrance path."
+    },
+    
+    {
+      "id": "E_L0_CEN_TO_LIFT1", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_LIFT_1",
+      "distanceMeters": 30.0, "estimatedSeconds": 25.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 300, "currentCrowdPercent": 15.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path to Lift L1."
+    },
+    {
+      "id": "E_L0_CEN_TO_LIFT2", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_LIFT_2",
+      "distanceMeters": 40.0, "estimatedSeconds": 35.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 300, "currentCrowdPercent": 20.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path to Lift L2."
+    },
+    {
+      "id": "E_L0_CEN_TO_LIFT3", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_LIFT_3",
+      "distanceMeters": 50.0, "estimatedSeconds": 45.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 300, "currentCrowdPercent": 10.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path to Lift L3."
+    },
+    
+    {
+      "id": "E_LIFT1_L0_L1", "fromNodeId": "N_L0_LIFT_1", "toNodeId": "N_L1_LIFT_1",
+      "distanceMeters": 10.0, "estimatedSeconds": 20.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "NARROW", "maximumCapacity": 20, "currentCrowdPercent": 50.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_LIFT_1"], "noiseLevel": "LOW", "hasRestPoint": false,
+      "textDescription": "Lift L1 journey from L0 to L1."
+    },
+    {
+      "id": "E_LIFT2_L0_L1", "fromNodeId": "N_L0_LIFT_2", "toNodeId": "N_L1_LIFT_2",
+      "distanceMeters": 10.0, "estimatedSeconds": 20.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "NARROW", "maximumCapacity": 20, "currentCrowdPercent": 60.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_LIFT_2"], "noiseLevel": "LOW", "hasRestPoint": false,
+      "textDescription": "Lift L2 journey from L0 to L1."
+    },
+    {
+      "id": "E_LIFT2_L1_L2", "fromNodeId": "N_L1_LIFT_2", "toNodeId": "N_L2_LIFT_2",
+      "distanceMeters": 10.0, "estimatedSeconds": 20.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "NARROW", "maximumCapacity": 20, "currentCrowdPercent": 60.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_LIFT_2"], "noiseLevel": "LOW", "hasRestPoint": false,
+      "textDescription": "Lift L2 journey from L1 to L2."
+    },
+    {
+      "id": "E_LIFT3_L0_L2", "fromNodeId": "N_L0_LIFT_3", "toNodeId": "N_L2_LIFT_3",
+      "distanceMeters": 20.0, "estimatedSeconds": 40.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "NARROW", "maximumCapacity": 20, "currentCrowdPercent": 30.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_LIFT_3"], "noiseLevel": "LOW", "hasRestPoint": false,
+      "textDescription": "Lift L3 journey from L0 to L2."
+    },
+    
+    {
+      "id": "E_STAIR1_L0_L1", "fromNodeId": "N_L0_STAIR_1", "toNodeId": "N_L1_STAIR_1",
+      "distanceMeters": 20.0, "estimatedSeconds": 45.0, "stepFree": false, "containsStairs": true,
+      "slopeCategory": "STEEP", "widthClass": "STANDARD", "maximumCapacity": 200, "currentCrowdPercent": 30.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_STAIR_1"], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Stair S1 from L0 to L1."
+    },
+    {
+      "id": "E_ESC1_L0_L1", "fromNodeId": "N_L0_ESC_1", "toNodeId": "N_L1_ESC_1",
+      "distanceMeters": 25.0, "estimatedSeconds": 30.0, "stepFree": false, "containsStairs": true,
+      "slopeCategory": "STEEP", "widthClass": "STANDARD", "maximumCapacity": 150, "currentCrowdPercent": 40.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_ESC_1"], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "textDescription": "Escalator E1 from L0 to L1."
+    },
+    
+    {
+      "id": "E_L1_LIFT1_TO_ECEN", "fromNodeId": "N_L1_LIFT_1", "toNodeId": "N_L1_E_CEN",
+      "distanceMeters": 15.0, "estimatedSeconds": 15.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 500, "currentCrowdPercent": 10.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path from Lift 1 to L1 East Hub."
+    },
+    {
+      "id": "E_L1_STAIR1_TO_ECEN", "fromNodeId": "N_L1_STAIR_1", "toNodeId": "N_L1_E_CEN",
+      "distanceMeters": 25.0, "estimatedSeconds": 25.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 500, "currentCrowdPercent": 15.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path from Stair 1 to L1 East Hub."
+    },
+    {
+      "id": "E_L1_ECEN_TO_SEC101", "fromNodeId": "N_L1_E_CEN", "toNodeId": "N_L1_SEC_101_108",
+      "distanceMeters": 50.0, "estimatedSeconds": 45.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 2000, "currentCrowdPercent": 25.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "textDescription": "Access to Sections 101-108."
+    },
+    
+    {
+      "id": "E_L1_LIFT2_TO_WCEN", "fromNodeId": "N_L1_LIFT_2", "toNodeId": "N_L1_W_CEN",
+      "distanceMeters": 10.0, "estimatedSeconds": 10.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 500, "currentCrowdPercent": 10.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path from Lift 2 to L1 West Hub."
+    },
+    {
+      "id": "E_L1_WCEN_TO_AR1", "fromNodeId": "N_L1_W_CEN", "toNodeId": "N_L1_AR1",
+      "distanceMeters": 30.0, "estimatedSeconds": 30.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 100, "currentCrowdPercent": 5.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": false,
+      "textDescription": "Access to AR1."
+    },
+    {
+      "id": "E_L1_WCEN_TO_SEC109", "fromNodeId": "N_L1_W_CEN", "toNodeId": "N_L1_SEC_109_116",
+      "distanceMeters": 50.0, "estimatedSeconds": 45.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 2000, "currentCrowdPercent": 20.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "textDescription": "Access to Sections 109-116."
+    },
+    
+    {
+      "id": "E_L2_LIFT3_TO_ECEN", "fromNodeId": "N_L2_LIFT_3", "toNodeId": "N_L2_E_CEN",
+      "distanceMeters": 20.0, "estimatedSeconds": 20.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 400, "currentCrowdPercent": 10.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path from Lift 3 to L2 East Hub."
+    },
+    {
+      "id": "E_L2_ECEN_TO_SEC201", "fromNodeId": "N_L2_E_CEN", "toNodeId": "N_L2_SEC_201_208",
+      "distanceMeters": 60.0, "estimatedSeconds": 50.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 1500, "currentCrowdPercent": 15.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "textDescription": "Access to Sections 201-208."
+    },
+    
+    {
+      "id": "E_L2_LIFT2_TO_WCEN", "fromNodeId": "N_L2_LIFT_2", "toNodeId": "N_L2_W_CEN",
+      "distanceMeters": 15.0, "estimatedSeconds": 15.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 400, "currentCrowdPercent": 12.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Path from Lift 2 to L2 West Hub."
+    },
+    {
+      "id": "E_L2_WCEN_TO_W3", "fromNodeId": "N_L2_W_CEN", "toNodeId": "N_L2_W3",
+      "distanceMeters": 40.0, "estimatedSeconds": 40.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 800, "currentCrowdPercent": 25.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Access to Corridor W3."
+    },
+    {
+      "id": "E_L2_W3_TO_SEC209", "fromNodeId": "N_L2_W3", "toNodeId": "N_L2_SEC_209_218",
+      "distanceMeters": 40.0, "estimatedSeconds": 35.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 1500, "currentCrowdPercent": 20.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "textDescription": "Access from Corridor W3 to Sections 209-218."
+    },
+    {
+      "id": "E_L2_WCEN_TO_AR2", "fromNodeId": "N_L2_W_CEN", "toNodeId": "N_L2_AR2",
+      "distanceMeters": 25.0, "estimatedSeconds": 25.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 100, "currentCrowdPercent": 5.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": false,
+      "textDescription": "Access to AR2."
+    },
+    
+    {
+      "id": "E_STAFF_SHORTCUT", "fromNodeId": "N_L1_E_CEN", "toNodeId": "N_L1_W_CEN",
+      "distanceMeters": 150.0, "estimatedSeconds": 100.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "NARROW", "maximumCapacity": 100, "currentCrowdPercent": 1.0,
+      "staffOnly": true, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": false,
+      "textDescription": "Staff-only corridor between East and West L1 hubs."
+    }
+  ],
+  "assets": [
+    {
+      "id": "A_LIFT_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "type": "LIFT", "label": "Lift L1", "status": "OPERATIONAL", "accessibilityCritical": true,
+      "servedNodeIds": ["N_L0_LIFT_1", "N_L1_LIFT_1"], "servedEdgeIds": ["E_LIFT1_L0_L1"],
+      "textDescription": "Primary lift for East sections."
+    },
+    {
+      "id": "A_LIFT_2", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "type": "LIFT", "label": "Lift L2", "status": "OPERATIONAL", "accessibilityCritical": true,
+      "servedNodeIds": ["N_L0_LIFT_2", "N_L1_LIFT_2", "N_L2_LIFT_2"], "servedEdgeIds": ["E_LIFT2_L0_L1", "E_LIFT2_L1_L2"],
+      "textDescription": "Primary lift for West sections and upper bowl. Critical for accessibility."
+    },
+    {
+      "id": "A_LIFT_3", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "type": "LIFT", "label": "Lift L3", "status": "OPERATIONAL", "accessibilityCritical": true,
+      "servedNodeIds": ["N_L0_LIFT_3", "N_L2_LIFT_3"], "servedEdgeIds": ["E_LIFT3_L0_L2"],
+      "textDescription": "Direct lift to upper East concourse."
+    },
+    {
+      "id": "A_STAIR_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "type": "STAIRS", "label": "Staircase S1", "status": "OPERATIONAL", "accessibilityCritical": false,
+      "servedNodeIds": ["N_L0_STAIR_1", "N_L1_STAIR_1"], "servedEdgeIds": ["E_STAIR1_L0_L1"],
+      "textDescription": "Main public stairs East."
+    },
+    {
+      "id": "A_STAIR_2", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "type": "STAIRS", "label": "Staircase S2", "status": "OPERATIONAL", "accessibilityCritical": false,
+      "servedNodeIds": ["N_L0_STAIR_2", "N_L2_STAIR_2"], "servedEdgeIds": [],
+      "textDescription": "Main public stairs to L2."
+    },
+    {
+      "id": "A_STAIR_3", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_E_CONCOURSE",
+      "type": "STAIRS", "label": "Staircase S3", "status": "OPERATIONAL", "accessibilityCritical": false,
+      "servedNodeIds": ["N_L1_STAIR_3", "N_L2_STAIR_3"], "servedEdgeIds": [],
+      "textDescription": "Stairs between L1 and L2."
+    },
+    {
+      "id": "A_ESC_1", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
+      "type": "ESCALATOR", "label": "Escalator E1", "status": "OPERATIONAL", "accessibilityCritical": false,
+      "servedNodeIds": ["N_L0_ESC_1", "N_L1_ESC_1"], "servedEdgeIds": ["E_ESC1_L0_L1"],
+      "textDescription": "Up escalator from L0 to L1."
+    },
+    {
+      "id": "A_ESC_2", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "type": "ESCALATOR", "label": "Escalator E2", "status": "OPERATIONAL", "accessibilityCritical": false,
+      "servedNodeIds": ["N_L1_ESC_2", "N_L2_ESC_2"], "servedEdgeIds": [],
+      "textDescription": "Up escalator from L1 to L2."
+    },
+    {
+      "id": "A_AR1", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
+      "type": "RESTROOM", "label": "Accessible Restroom L1", "status": "OPERATIONAL", "accessibilityCritical": true,
+      "servedNodeIds": ["N_L1_AR1"], "servedEdgeIds": [],
+      "textDescription": "Fully equipped accessible restroom."
+    },
+    {
+      "id": "A_AR2", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "type": "RESTROOM", "label": "Accessible Restroom L2", "status": "OPERATIONAL", "accessibilityCritical": true,
+      "servedNodeIds": ["N_L2_AR2"], "servedEdgeIds": [],
+      "textDescription": "Fully equipped accessible restroom."
+    }
+  ]
+}
