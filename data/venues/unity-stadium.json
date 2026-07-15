@@ -5,6 +5,21 @@
   "synthetic": true,
   "schemaVersion": "1.0",
   "venueVersion": "1.0",
+  "configuration": {
+    "coordinateMin": 0,
+    "coordinateMax": 1000,
+    "primaryGateNodeIds": ["N_N_GATE", "N_S_GATE", "N_L0_E_GATE", "N_L0_W_ACC_ENT"],
+    "accessibleEntranceNodeIds": ["N_L0_W_ACC_ENT"],
+    "accessibleDestinationNodeIds": [
+      "N_L0_MED_1", "N_L0_WAIT_1", "N_L1_AR1", "N_L1_MED_2", "N_L1_Q1",
+      "N_L1_SEC_101_108", "N_L1_SEC_109_116", "N_L2_AR2", "N_L2_WAIT_2",
+      "N_L2_SEC_201_208", "N_L2_SEC_209_218"
+    ],
+    "criticalPublicNodeIds": [
+      "N_L0_CEN", "N_L1_E_CEN", "N_L1_W_CEN", "N_L2_E_CEN", "N_L2_W_CEN",
+      "N_L1_SEC_101_108", "N_L1_SEC_109_116", "N_L2_SEC_201_208", "N_L2_SEC_209_218"
+    ]
+  },
   "levels": [
     {
       "id": "L0",
@@ -39,7 +54,7 @@
       "occupancyPercent": 10.0,
       "status": "NORMAL",
       "nodeIds": ["N_N_GATE", "N_N_SEC_IN"],
-      "assetIds": []
+      "assetIds": ["A_SCANNER_N2"]
     },
     {
       "id": "Z_S_SEC",
@@ -135,7 +150,7 @@
       "occupancyPercent": 0.0,
       "status": "NORMAL",
       "nodeIds": ["N_L2_W_CEN", "N_L2_LIFT_2", "N_L2_AR2", "N_L2_W3", "N_L2_ESC_2", "N_L2_WAIT_2"],
-      "assetIds": ["A_LIFT_2", "A_AR2", "A_ESC_2"]
+      "assetIds": ["A_LIFT_2", "A_AR2", "A_ESC_2", "A_CORRIDOR_W3"]
     },
     {
       "id": "Z_SEC_201_208",
@@ -171,7 +186,7 @@
     {
       "id": "N_N_SEC_IN", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_N_SEC",
       "label": "North Security Scanners", "type": "CHECKPOINT", "x": 500, "y": 150, "accessible": true, "staffOnly": false,
-      "capacity": 5000, "status": "OPEN", "textDescription": "Security screening for North Gate."
+      "capacity": 5000, "status": "OPEN", "assetId": "A_SCANNER_N2", "textDescription": "Synthetic Scanner Bank N2 serving North Gate security."
     },
     {
       "id": "N_S_GATE", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_S_SEC",
@@ -346,7 +361,7 @@
     {
       "id": "N_L2_W3", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
       "label": "Corridor W3", "type": "CORRIDOR", "x": 250, "y": 250, "accessible": true, "staffOnly": false,
-      "capacity": 1000, "status": "OPEN", "textDescription": "Main corridor connecting West Concourse to Sections 209-218."
+      "capacity": 1000, "status": "OPEN", "assetId": "A_CORRIDOR_W3", "textDescription": "Step-free fallback corridor connecting the Level 1 west concourse to Sections 209-218."
     },
     {
       "id": "N_L2_WAIT_2", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
@@ -544,14 +559,14 @@
       "id": "E_L2_WCEN_TO_W3", "fromNodeId": "N_L2_W_CEN", "toNodeId": "N_L2_W3",
       "distanceMeters": 40.0, "estimatedSeconds": 40.0, "stepFree": true, "containsStairs": false,
       "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 800, "currentCrowdPercent": 25.0,
-      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_CORRIDOR_W3"], "noiseLevel": "MEDIUM", "hasRestPoint": false,
       "textDescription": "Access to Corridor W3."
     },
     {
       "id": "E_L2_W3_TO_SEC209", "fromNodeId": "N_L2_W3", "toNodeId": "N_L2_SEC_209_218",
       "distanceMeters": 40.0, "estimatedSeconds": 35.0, "stepFree": true, "containsStairs": false,
       "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 1500, "currentCrowdPercent": 20.0,
-      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": false,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_CORRIDOR_W3"], "noiseLevel": "HIGH", "hasRestPoint": false,
       "textDescription": "Access from Corridor W3 to Sections 209-218."
     },
     {
@@ -561,10 +576,143 @@
       "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": false,
       "textDescription": "Access to AR2."
     },
+    {
+      "id": "E_L0_CEN_TO_STAIR1", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_STAIR_1",
+      "distanceMeters": 45.0, "estimatedSeconds": 40.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 600, "currentCrowdPercent": 12.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Ground concourse approach to Stair S1."
+    },
+    {
+      "id": "E_L0_CEN_TO_STAIR2", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_STAIR_2",
+      "distanceMeters": 50.0, "estimatedSeconds": 45.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 600, "currentCrowdPercent": 10.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Ground concourse approach to Stair S2."
+    },
+    {
+      "id": "E_L0_CEN_TO_ESC1", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_ESC_1",
+      "distanceMeters": 35.0, "estimatedSeconds": 30.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 450, "currentCrowdPercent": 14.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Ground concourse approach to Escalator E1."
+    },
+    {
+      "id": "E_L0_CEN_TO_MED1", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_MED_1",
+      "distanceMeters": 32.0, "estimatedSeconds": 30.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 250, "currentCrowdPercent": 4.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": true,
+      "textDescription": "Step-free access from the main concourse to Medical Point M1."
+    },
+    {
+      "id": "E_L0_CEN_TO_WAIT1", "fromNodeId": "N_L0_CEN", "toNodeId": "N_L0_WAIT_1",
+      "distanceMeters": 28.0, "estimatedSeconds": 26.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 180, "currentCrowdPercent": 3.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": true,
+      "textDescription": "Step-free access to Safe Waiting Point W1."
+    },
+    {
+      "id": "E_STAIR2_L0_L2", "fromNodeId": "N_L0_STAIR_2", "toNodeId": "N_L2_STAIR_2",
+      "distanceMeters": 42.0, "estimatedSeconds": 95.0, "stepFree": false, "containsStairs": true,
+      "slopeCategory": "STAIRS", "widthClass": "WIDE", "maximumCapacity": 300, "currentCrowdPercent": 9.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_STAIR_2"], "noiseLevel": "MEDIUM", "hasRestPoint": true,
+      "textDescription": "Stair S2 transition between Levels 0 and 2 with an intermediate landing."
+    },
+    {
+      "id": "E_STAIR3_L1_L2", "fromNodeId": "N_L1_STAIR_3", "toNodeId": "N_L2_STAIR_3",
+      "distanceMeters": 24.0, "estimatedSeconds": 55.0, "stepFree": false, "containsStairs": true,
+      "slopeCategory": "STAIRS", "widthClass": "STANDARD", "maximumCapacity": 250, "currentCrowdPercent": 8.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_STAIR_3"], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Stair S3 transition between Levels 1 and 2."
+    },
+    {
+      "id": "E_ESC2_L1_L2", "fromNodeId": "N_L1_ESC_2", "toNodeId": "N_L2_ESC_2",
+      "distanceMeters": 28.0, "estimatedSeconds": 42.0, "stepFree": false, "containsStairs": true,
+      "slopeCategory": "MECHANICAL_STAIRS", "widthClass": "STANDARD", "maximumCapacity": 220, "currentCrowdPercent": 11.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_ESC_2"], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Escalator E2 transition between Levels 1 and 2; not a step-free route."
+    },
+    {
+      "id": "E_L1_ECEN_TO_ESC1", "fromNodeId": "N_L1_E_CEN", "toNodeId": "N_L1_ESC_1",
+      "distanceMeters": 12.0, "estimatedSeconds": 12.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 400, "currentCrowdPercent": 12.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Level 1 approach from Escalator E1 to the east concourse."
+    },
+    {
+      "id": "E_L1_ECEN_TO_STAIR3", "fromNodeId": "N_L1_E_CEN", "toNodeId": "N_L1_STAIR_3",
+      "distanceMeters": 18.0, "estimatedSeconds": 16.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 350, "currentCrowdPercent": 8.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Level 1 east concourse approach to Stair S3."
+    },
+    {
+      "id": "E_L1_PUBLIC_CROSS", "fromNodeId": "N_L1_E_CEN", "toNodeId": "N_L1_W_CEN",
+      "distanceMeters": 240.0, "estimatedSeconds": 190.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 1400, "currentCrowdPercent": 18.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "HIGH", "hasRestPoint": true,
+      "textDescription": "Long public step-free route around the Level 1 concourse between east and west hubs."
+    },
+    {
+      "id": "E_L1_WCEN_TO_ESC2", "fromNodeId": "N_L1_W_CEN", "toNodeId": "N_L1_ESC_2",
+      "distanceMeters": 18.0, "estimatedSeconds": 16.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 350, "currentCrowdPercent": 9.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Level 1 west concourse approach to Escalator E2."
+    },
+    {
+      "id": "E_L1_WCEN_TO_MED2", "fromNodeId": "N_L1_W_CEN", "toNodeId": "N_L1_MED_2",
+      "distanceMeters": 38.0, "estimatedSeconds": 34.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 180, "currentCrowdPercent": 3.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": true,
+      "textDescription": "Step-free access to Medical Point M2."
+    },
+    {
+      "id": "E_L1_WCEN_TO_Q1", "fromNodeId": "N_L1_W_CEN", "toNodeId": "N_L1_Q1",
+      "distanceMeters": 45.0, "estimatedSeconds": 42.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 120, "currentCrowdPercent": 2.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": true,
+      "textDescription": "Low-noise step-free access to Quiet Assistance Area Q1."
+    },
+    {
+      "id": "E_W3_FALLBACK_RAMP", "fromNodeId": "N_L1_W_CEN", "toNodeId": "N_L2_W3",
+      "distanceMeters": 135.0, "estimatedSeconds": 150.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "GENTLE", "widthClass": "STANDARD", "maximumCapacity": 450, "currentCrowdPercent": 16.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": ["A_CORRIDOR_W3"], "noiseLevel": "MEDIUM", "hasRestPoint": true,
+      "textDescription": "Long step-free Corridor W3 ramp used as the verified fallback when Lift L2 is unavailable."
+    },
+    {
+      "id": "E_L2_ECEN_TO_STAIR2", "fromNodeId": "N_L2_E_CEN", "toNodeId": "N_L2_STAIR_2",
+      "distanceMeters": 30.0, "estimatedSeconds": 27.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "WIDE", "maximumCapacity": 450, "currentCrowdPercent": 8.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Level 2 east concourse approach to Stair S2."
+    },
+    {
+      "id": "E_L2_ECEN_TO_STAIR3", "fromNodeId": "N_L2_E_CEN", "toNodeId": "N_L2_STAIR_3",
+      "distanceMeters": 20.0, "estimatedSeconds": 18.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 350, "currentCrowdPercent": 7.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Level 2 east concourse approach to Stair S3."
+    },
+    {
+      "id": "E_L2_WCEN_TO_ESC2", "fromNodeId": "N_L2_W_CEN", "toNodeId": "N_L2_ESC_2",
+      "distanceMeters": 18.0, "estimatedSeconds": 16.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 350, "currentCrowdPercent": 8.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "MEDIUM", "hasRestPoint": false,
+      "textDescription": "Level 2 west concourse approach from Escalator E2."
+    },
+    {
+      "id": "E_L2_WCEN_TO_WAIT2", "fromNodeId": "N_L2_W_CEN", "toNodeId": "N_L2_WAIT_2",
+      "distanceMeters": 42.0, "estimatedSeconds": 40.0, "stepFree": true, "containsStairs": false,
+      "slopeCategory": "FLAT", "widthClass": "STANDARD", "maximumCapacity": 160, "currentCrowdPercent": 3.0,
+      "staffOnly": false, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": true,
+      "textDescription": "Step-free access to Safe Waiting Point W2."
+    },
     
     {
       "id": "E_STAFF_SHORTCUT", "fromNodeId": "N_L1_E_CEN", "toNodeId": "N_L1_W_CEN",
-      "distanceMeters": 150.0, "estimatedSeconds": 100.0, "stepFree": true, "containsStairs": false,
+      "distanceMeters": 90.0, "estimatedSeconds": 75.0, "stepFree": true, "containsStairs": false,
       "slopeCategory": "FLAT", "widthClass": "NARROW", "maximumCapacity": 100, "currentCrowdPercent": 1.0,
       "staffOnly": true, "status": "OPEN", "dependentAssetIds": [], "noiseLevel": "LOW", "hasRestPoint": false,
       "textDescription": "Staff-only corridor between East and West L1 hubs."
@@ -598,13 +746,13 @@
     {
       "id": "A_STAIR_2", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_G_CONCOURSE",
       "type": "STAIRS", "label": "Staircase S2", "status": "OPERATIONAL", "accessibilityCritical": false,
-      "servedNodeIds": ["N_L0_STAIR_2", "N_L2_STAIR_2"], "servedEdgeIds": [],
+      "servedNodeIds": ["N_L0_STAIR_2", "N_L2_STAIR_2"], "servedEdgeIds": ["E_STAIR2_L0_L2"],
       "textDescription": "Main public stairs to L2."
     },
     {
       "id": "A_STAIR_3", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_E_CONCOURSE",
       "type": "STAIRS", "label": "Staircase S3", "status": "OPERATIONAL", "accessibilityCritical": false,
-      "servedNodeIds": ["N_L1_STAIR_3", "N_L2_STAIR_3"], "servedEdgeIds": [],
+      "servedNodeIds": ["N_L1_STAIR_3", "N_L2_STAIR_3"], "servedEdgeIds": ["E_STAIR3_L1_L2"],
       "textDescription": "Stairs between L1 and L2."
     },
     {
@@ -616,7 +764,7 @@
     {
       "id": "A_ESC_2", "venueId": "unity-stadium", "levelId": "L1", "zoneId": "Z_L1_W_CONCOURSE",
       "type": "ESCALATOR", "label": "Escalator E2", "status": "OPERATIONAL", "accessibilityCritical": false,
-      "servedNodeIds": ["N_L1_ESC_2", "N_L2_ESC_2"], "servedEdgeIds": [],
+      "servedNodeIds": ["N_L1_ESC_2", "N_L2_ESC_2"], "servedEdgeIds": ["E_ESC2_L1_L2"],
       "textDescription": "Up escalator from L1 to L2."
     },
     {
@@ -630,6 +778,18 @@
       "type": "RESTROOM", "label": "Accessible Restroom L2", "status": "OPERATIONAL", "accessibilityCritical": true,
       "servedNodeIds": ["N_L2_AR2"], "servedEdgeIds": [],
       "textDescription": "Fully equipped accessible restroom."
+    },
+    {
+      "id": "A_SCANNER_N2", "venueId": "unity-stadium", "levelId": "L0", "zoneId": "Z_N_SEC",
+      "type": "SCANNER_BANK", "label": "Scanner Bank N2", "status": "OPERATIONAL", "accessibilityCritical": false,
+      "servedNodeIds": ["N_N_SEC_IN"], "servedEdgeIds": ["E_N_GATE_TO_SEC"],
+      "textDescription": "Synthetic North Gate scanner bank whose failure can reduce entrance throughput."
+    },
+    {
+      "id": "A_CORRIDOR_W3", "venueId": "unity-stadium", "levelId": "L2", "zoneId": "Z_L2_W_CONCOURSE",
+      "type": "CORRIDOR", "label": "Corridor W3", "status": "OPERATIONAL", "accessibilityCritical": true,
+      "servedNodeIds": ["N_L1_W_CEN", "N_L2_W3"], "servedEdgeIds": ["E_W3_FALLBACK_RAMP", "E_L2_WCEN_TO_W3", "E_L2_W3_TO_SEC209"],
+      "textDescription": "Long step-free fallback corridor to Sections 209–218; closure can remove the last verified fallback after a Lift L2 outage."
     }
   ]
 }

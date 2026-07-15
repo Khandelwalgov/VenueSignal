@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "VenueSignal",
-  description: "Operational intelligence for stadiums",
+  title: "VenueSignal | Unity Stadium Operations",
+  description: "Deterministic venue-state and accessibility inspection for the synthetic Unity Stadium prototype.",
 };
 
 export default function RootLayout({
@@ -16,7 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         <a href="#main-content" className="skip-link">Skip to main content</a>
         {children}
       </body>

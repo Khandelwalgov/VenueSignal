@@ -31,5 +31,9 @@ INPUT → CONTEXT → REASONING → EXPLANATION → HUMAN DECISION → ACTION �
 Accessibility is a core impact layer, not an afterthought. The deterministic engine verifies step-free routes, and a safe valid outcome could be "No verified step-free route currently exists", prompting operational containment rather than false guidance.
 
 ## AI vs Deterministic Responsibilities
-- **AI (Gemini)**: Used for report extraction, clarification questions, incident candidate matching, situation synthesis, and plan generation. AI is NEVER the source of route truth or execution.
+- **AI provider (local demo today; Gemini planned)**: Used for advisory report extraction, clarification questions, situation synthesis, plan proposals, and reassessment explanations. AI is NEVER the source of route truth or execution.
 - **Deterministic Engine**: Controls graph topology, route existence, status transitions, accessibility constraints, task creation, and human-approval logic.
+
+## Current delivery status
+
+The complete local golden loop is implemented with in-memory repositories and a deterministic local AI provider. Durable persistence, production Gemini calls, Firebase authentication, and real message delivery remain planned and are not represented as working integrations.

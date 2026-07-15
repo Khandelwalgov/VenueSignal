@@ -1,134 +1,158 @@
 "use client";
 
-import { LevelData } from "@/lib/api";
+import { Asset, LevelData, Node, Zone } from "@/lib/api";
 
 interface MapDisplayProps {
   levelData: LevelData;
   selectedEntityId: string | null;
+  visibleAssetIds: string[];
+  routeEdgeIds?: string[];
   onSelectEntity: (id: string) => void;
 }
 
-export default function MapDisplay({ levelData, selectedEntityId, onSelectEntity }: MapDisplayProps) {
-  // A simple viewbox to contain 0,0 to 1000,1000 coordinates.
-  const viewBox = "0 0 1000 1000";
+const assetSymbols: Record<string, string> = {
+  LIFT: "L",
+  STAIRS: "S",
+  ESCALATOR: "E",
+  RESTROOM: "AR",
+  SCANNER_BANK: "SB",
+  CORRIDOR: "W3",
+};
 
-  const getEdgeStyle = (status: string) => {
-    switch (status) {
-      case "OPEN":
-        return { stroke: "var(--success)", strokeWidth: 4, strokeDasharray: "none" };
-      case "RESTRICTED":
-        return { stroke: "var(--warning)", strokeWidth: 4, strokeDasharray: "10, 5" };
-      case "CLOSED":
-        return { stroke: "var(--danger)", strokeWidth: 4, strokeDasharray: "4, 4" };
-      default:
-        return { stroke: "#9ca3af", strokeWidth: 4 };
-    }
+function zoneBounds(zone: Zone, nodes: Node[]) {
+  const zoneNodes = nodes.filter((node) => zone.nodeIds.includes(node.id));
+  if (zoneNodes.length === 0) return null;
+  const xs = zoneNodes.map((node) => node.x);
+  const ys = zoneNodes.map((node) => node.y);
+  const left = Math.max(20, Math.min(...xs) - 55);
+  const top = Math.max(20, Math.min(...ys) - 55);
+  const right = Math.min(980, Math.max(...xs) + 55);
+  const bottom = Math.min(980, Math.max(...ys) + 55);
+  return {
+    x: left,
+    y: top,
+    width: Math.max(110, right - left),
+    height: Math.max(90, bottom - top),
   };
+}
 
-  const getNodeStyle = (status: string, isSelected: boolean) => {
-    const baseStyle = { stroke: isSelected ? "var(--foreground)" : "white", strokeWidth: isSelected ? 4 : 2 };
-    switch (status) {
-      case "OPEN":
-        return { ...baseStyle, fill: "var(--success)" };
-      case "RESTRICTED":
-        return { ...baseStyle, fill: "var(--warning)" };
-      case "CLOSED":
-        return { ...baseStyle, fill: "var(--danger)" };
-      default:
-        return { ...baseStyle, fill: "var(--primary)" };
-    }
-  };
+function nodeAsset(node: Node, assets: Asset[]) {
+  return node.assetId ? assets.find((asset) => asset.id === node.assetId) : undefined;
+}
+
+export default function MapDisplay({
+  levelData,
+  selectedEntityId,
+  visibleAssetIds,
+  routeEdgeIds = [],
+  onSelectEntity,
+}: MapDisplayProps) {
+  const visibleAssets = new Set(visibleAssetIds);
 
   return (
-    <svg 
-      viewBox={viewBox} 
-      style={{ width: "100%", height: "100%", maxHeight: "800px" }}
-      aria-label={`Interactive map for ${levelData.level.label}`}
-      role="application"
+    <svg
+      viewBox="0 0 1000 1000"
+      className="stadium-map"
+      aria-labelledby="map-title map-description"
+      role="group"
     >
-      <title>{levelData.level.label} Map</title>
-      <desc>SVG map showing paths and nodes for the selected level. Use Tab to navigate interactive elements.</desc>
-      
-      {/* Edges */}
-      {levelData.edges.map((edge) => {
-        const fromNode = levelData.nodes.find(n => n.id === edge.fromNodeId);
-        const toNode = levelData.nodes.find(n => n.id === edge.toNodeId);
-        
-        if (!fromNode || !toNode) return null;
-        const style = getEdgeStyle(edge.status);
-        const isSelected = selectedEntityId === edge.id;
+      <title id="map-title">{levelData.level.label} operations map</title>
+      <desc id="map-description">
+        Synthetic stadium map with selectable zones and facilities. Equivalent
+        zone and asset controls are provided beside the map.
+      </desc>
 
-        return (
-          <g key={edge.id}>
+      <rect className="map-surface" x="8" y="8" width="984" height="984" rx="42" />
+      <ellipse className="stadium-bowl" cx="500" cy="500" rx="245" ry="190" />
+      <rect className="stadium-field" x="375" y="405" width="250" height="190" rx="18" />
+      <text className="field-label" x="500" y="505" textAnchor="middle">
+        UNITY FIELD
+      </text>
+
+      <g aria-label="Operational zones">
+        {levelData.zones.map((zone) => {
+          const bounds = zoneBounds(zone, levelData.nodes);
+          if (!bounds) return null;
+          const selected = selectedEntityId === zone.id;
+          return (
+            <g
+              key={zone.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`${zone.label}, zone status ${zone.status}`}
+              aria-pressed={selected}
+              data-entity-id={zone.id}
+              className={`map-zone status-${zone.status.toLowerCase()} ${selected ? "is-selected" : ""}`}
+              onClick={() => onSelectEntity(zone.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectEntity(zone.id);
+                }
+              }}
+            >
+              <rect {...bounds} rx="24" />
+              <text x={bounds.x + 14} y={bounds.y + 24}>
+                {zone.label}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+
+      <g aria-hidden="true">
+        {levelData.edges.map((edge) => {
+          const fromNode = levelData.nodes.find((node) => node.id === edge.fromNodeId);
+          const toNode = levelData.nodes.find((node) => node.id === edge.toNodeId);
+          if (!fromNode || !toNode) return null;
+          return (
             <line
+              key={edge.id}
               x1={fromNode.x}
-              y1={fromNode.x === fromNode.x ? fromNode.y : fromNode.y} // avoid unused var warning if any
+              y1={fromNode.y}
               x2={toNode.x}
               y2={toNode.y}
-              style={{ ...style, strokeWidth: isSelected ? 6 : style.strokeWidth }}
-              onClick={() => onSelectEntity(edge.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelectEntity(edge.id);
+              className={`map-edge status-${edge.status.toLowerCase()} ${edge.stepFree ? "is-step-free" : "contains-stairs"} ${routeEdgeIds.includes(edge.id) ? "is-route" : ""}`}
+            />
+          );
+        })}
+      </g>
+
+      <g aria-label="Map facilities and destinations">
+        {levelData.nodes.map((node) => {
+          const asset = nodeAsset(node, levelData.assets);
+          if (asset && !visibleAssets.has(asset.id)) return null;
+          const entityId = asset?.id ?? node.id;
+          const selected = selectedEntityId === entityId;
+          const symbol = asset ? assetSymbols[asset.type] ?? "A" : node.type === "GATE" ? "G" : "•";
+          return (
+            <g
+              key={node.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`${asset?.label ?? node.label}, ${asset ? `asset status ${asset.status}` : `node status ${node.status}`}${asset?.accessibilityCritical ? ", accessibility critical" : ""}`}
+              aria-pressed={selected}
+              data-entity-id={entityId}
+              className={`map-entity ${asset ? "is-asset" : "is-node"} ${asset?.accessibilityCritical ? "is-critical" : ""} ${selected ? "is-selected" : ""}`}
+              onClick={() => onSelectEntity(entityId)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectEntity(entityId);
                 }
               }}
-              tabIndex={0}
-              role="button"
-              aria-label={`Path ${edge.id}, status: ${edge.status}, ${edge.textDescription}`}
-              className="svg-interactive"
-              cursor="pointer"
             >
-              <title>{edge.textDescription}</title>
-            </line>
-          </g>
-        );
-      })}
-
-      {/* Nodes */}
-      {levelData.nodes.map((node) => {
-        const isSelected = selectedEntityId === node.id || (node.assetId && selectedEntityId === node.assetId);
-        const style = getNodeStyle(node.status, !!isSelected);
-        
-        // Let's check if there's a related asset, if so we prefer selecting the asset
-        const idToSelect = node.assetId ? node.assetId : node.id;
-
-        return (
-          <g key={node.id}>
-            <circle
-              cx={node.x}
-              cy={node.y}
-              r={15}
-              style={style}
-              onClick={() => onSelectEntity(idToSelect)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelectEntity(idToSelect);
-                }
-              }}
-              tabIndex={0}
-              role="button"
-              aria-label={`${node.label}, status: ${node.status}`}
-              className="svg-interactive"
-              cursor="pointer"
-            >
-              <title>{node.label}</title>
-            </circle>
-            <text 
-              x={node.x} 
-              y={node.y - 20} 
-              textAnchor="middle" 
-              fontSize="12" 
-              fill="var(--foreground)"
-              pointerEvents="none"
-              fontWeight={isSelected ? "bold" : "normal"}
-            >
-              {node.label}
-            </text>
-          </g>
-        );
-      })}
+              <circle cx={node.x} cy={node.y} r={asset ? 22 : 14} />
+              <text className="entity-symbol" x={node.x} y={node.y + 5} textAnchor="middle">
+                {symbol}
+              </text>
+              <text className="entity-label" x={node.x} y={node.y - 30} textAnchor="middle">
+                {node.label}
+              </text>
+            </g>
+          );
+        })}
+      </g>
     </svg>
   );
 }
