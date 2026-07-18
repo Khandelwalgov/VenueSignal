@@ -21,6 +21,16 @@ vi.mock("@/lib/api", async (importOriginal) => {
     createIncident: vi.fn(),
     approveIncident: vi.fn(),
     reassessIncident: vi.fn(),
+    updateIncidentStatus: vi.fn(),
+    fetchPrincipal: vi.fn(),
+    fetchReports: vi.fn(),
+    fetchIncidents: vi.fn(),
+    fetchTasks: vi.fn(),
+    fetchCommunications: vi.fn(),
+    fetchAudit: vi.fn(),
+    importReports: vi.fn(),
+    updateTask: vi.fn(),
+    updateCommunication: vi.fn(),
   };
 });
 
@@ -69,6 +79,12 @@ function mockSuccess() {
   vi.mocked(api.fetchGoldenStepFreeRoute).mockResolvedValue(normalRoute);
   vi.mocked(api.setAssetStatus).mockResolvedValue(operationalState);
   vi.mocked(api.resetOperationalState).mockResolvedValue(operationalState);
+  vi.mocked(api.fetchPrincipal).mockResolvedValue({ uid: "local-controller", displayName: "Local Demo Controller", role: "CONTROLLER", authMode: "disabled" });
+  vi.mocked(api.fetchReports).mockResolvedValue([]);
+  vi.mocked(api.fetchIncidents).mockResolvedValue([]);
+  vi.mocked(api.fetchTasks).mockResolvedValue([]);
+  vi.mocked(api.fetchCommunications).mockResolvedValue([]);
+  vi.mocked(api.fetchAudit).mockResolvedValue([]);
 }
 
 describe("VenueSignal Phase 1 workspace", () => {
@@ -147,9 +163,10 @@ describe("VenueSignal Phase 1 workspace", () => {
     expect(screen.getByText(/Do not publish route guidance/)).toBeVisible();
   });
 
-  it("announces a loading state while data is pending", () => {
+  it("announces a loading state while data is pending", async () => {
     vi.mocked(api.fetchVenue).mockReturnValue(new Promise(() => undefined));
     render(<Home />);
+    await screen.findByText("Local Demo Controller");
     expect(screen.getByRole("status")).toHaveTextContent("Loading validated stadium graph");
   });
 
@@ -158,26 +175,141 @@ describe("VenueSignal Phase 1 workspace", () => {
     const reports = [1, 2, 3].map((number) => ({
       id: `RPT-${number}`, rawText: `Synthetic report ${number}`, language: "en", source: "EVALUATOR_UI", synthetic: true,
       extraction: { category: "FACILITY_OUTAGE", summary: `Synthetic report ${number}`, candidateZoneIds: ["Z_L2_W"], candidateAssetIds: ["A_LIFT_2"], affectedGroups: [], observedSymptoms: [], urgencySuggestion: "HIGH", confidence: .86, unverifiedClaims: [`Synthetic report ${number}`], missingInformation: ["Controller verification"], clarificationQuestions: [], untrustedInstructionDetected: false, provider: "LOCAL_DEMO_PROVIDER" },
-      relatedReportIds: [], createdAt: "2026-07-15T00:00:00Z",
+      relatedReportIds: [], matchCandidates: [], createdAt: "2026-07-15T00:00:00Z",
     })) satisfies api.VenueReport[];
     const proposed = {
       id: "INC-1", reportIds: ["RPT-1", "RPT-2"], status: "PLAN_PROPOSED", verifiedFacts: ["Lift L2 is OUT_OF_SERVICE"], unverifiedClaims: reports.map((report) => report.rawText),
       impact: { routeResult: { ...normalRoute, edgeIds: ["E_W3_FALLBACK_RAMP"], operationalContextVersion: 2 }, accessibilityConsequences: [], contextVersion: 2 },
-      currentPlan: { id: "PLAN-1", operationalObjective: "Maintain verified step-free access.", actions: [{ actionType: "INSPECT_ASSET", title: "Inspect Lift L2", assignedTeam: "MAINTENANCE", locationId: "A_LIFT_2", rationale: "Verified outage" }], confidence: .86, contextVersion: 2, validity: "VALID" },
+      currentPlan: { id: "PLAN-1", operationalObjective: "Maintain verified step-free access.", actions: [{ actionType: "INSPECT_ASSET", title: "Inspect Lift L2", assignedTeam: "MAINTENANCE", locationId: "A_LIFT_2", rationale: "Verified outage" }], confidence: .86, contextVersion: 2, validity: "VALID", planSource: "LOCAL_DETERMINISTIC" },
       tasks: [], communications: [],
     } satisfies api.Incident;
     const approved = { ...proposed, status: "PLAN_APPROVED", tasks: [{ id: "TASK-1", title: "Inspect Lift L2", status: "CREATED", assignedTeam: "MAINTENANCE" }], communications: [{ id: "COM-1", language: "en", content: "Use the staffed fallback.", status: "DRAFT" }] } satisfies api.Incident;
+    const reassessed = {
+      ...approved,
+      status: "PLAN_PROPOSED",
+      impact: { ...approved.impact, routeResult: { ...normalRoute, found: false, nodeIds: [], edgeIds: [], message: "No verified safe step-free route currently exists.", operationalContextVersion: 3 }, contextVersion: 3 },
+      currentPlan: { ...approved.currentPlan, validity: "UNSAFE" },
+      proposedRevision: { id: "PLAN-2", operationalObjective: "Contain safely.", actions: [{ actionType: "ESTABLISH_WAITING_POINT", title: "Establish waiting point", assignedTeam: "ACCESSIBILITY_TEAM", locationId: "N_L2_WAIT_2", rationale: "No route" }], confidence: .8, contextVersion: 3, validity: "AWAITING_VERIFICATION", planSource: "LOCAL_DETERMINISTIC" },
+      reassessment: { explanation: "The verified route is no longer feasible.", validity: "UNSAFE", requiresHumanReview: true },
+      communications: [{ ...approved.communications[0], status: "SUPERSEDED" }],
+    } satisfies api.Incident;
     vi.mocked(api.createReport).mockResolvedValueOnce(reports[0]).mockResolvedValueOnce(reports[1]).mockResolvedValueOnce(reports[2]);
     vi.mocked(api.createIncident).mockResolvedValue(proposed);
     vi.mocked(api.approveIncident).mockResolvedValue(approved);
+    vi.mocked(api.reassessIncident).mockResolvedValue(reassessed);
     render(<Home />);
     await screen.findByText("Validated canonical graph");
-    await user.click(screen.getByRole("button", { name: "Load 3-report scenario" }));
+    const loadScenario = screen.getByRole("button", { name: "Load 3-report scenario" });
+    loadScenario.focus();
+    expect(loadScenario).toHaveFocus();
+    await user.keyboard("{Enter}");
     expect(await screen.findAllByText(/unverified claim/i)).toHaveLength(3);
-    await user.click(screen.getByRole("button", { name: "Confirm incident and analyse impact" }));
+    const confirmIncident = screen.getByRole("button", { name: "Confirm incident and analyse impact" });
+    confirmIncident.focus();
+    expect(confirmIncident).toHaveFocus();
+    await user.keyboard("{Enter}");
     expect(await screen.findByText("Fallback route verified")).toBeVisible();
     expect(screen.queryByText(/tasks ·/)).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Approve plan and create work" }));
+    const approvePlan = screen.getByRole("button", { name: "Approve plan and create work" });
+    approvePlan.focus();
+    expect(approvePlan).toHaveFocus();
+    await user.keyboard("{Enter}");
     expect(await screen.findByText("✓ 1 tasks · 1 multilingual drafts")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Approve plan and create work" })).toBeDisabled();
+    const reassess = screen.getByRole("button", { name: "Close W3 and reassess" });
+    reassess.focus();
+    expect(reassess).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("NO VERIFIED STEP-FREE ROUTE")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Approve containment revision" })).toBeEnabled();
+  });
+
+  it("shows the server-verified identity and complete operating areas", async () => {
+    render(<Home />);
+    expect(await screen.findByText("Local Demo Controller")).toBeVisible();
+    expect(screen.getByText("CONTROLLER · disabled")).toBeVisible();
+    const navigation = screen.getByRole("navigation", { name: "VenueSignal areas" });
+    for (const area of ["Operations", "Reports", "Incidents", "Venue state", "Tasks", "Communications", "Scenarios", "Audit"]) {
+      expect(within(navigation).getByRole("link", { name: area })).toBeVisible();
+    }
+  });
+
+  it("previews evaluator uploads through the real import API", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.importReports).mockResolvedValue({ format: "CSV", rowsDetected: 1, validRows: 1, errors: [], reports: [], duplicateReportIds: [], importFingerprint: "abc" });
+    render(<Home />);
+    await screen.findByText("Validated canonical graph");
+    const file = new File(["rawText,language\nLift L2 is stuck,en"], "reports.csv", { type: "text/csv" });
+    await user.upload(screen.getByLabelText("CSV or JSON evaluator import"), file);
+    await user.click(screen.getByRole("button", { name: "Preview import" }));
+    expect(await screen.findByText("1/1 valid · 0 duplicates · 0 errors")).toBeVisible();
+    expect(api.importReports).toHaveBeenCalledWith(file, false);
+  });
+
+  it("exposes validated task, communication, and audit lifecycle controls", async () => {
+    const user = userEvent.setup();
+    const task = { id: "TSK-1", title: "Inspect Lift L2", status: "CREATED", assignedTeam: "MAINTENANCE" } satisfies api.WorkflowTask;
+    const communication = { id: "COM-1", language: "en", content: "Use staffed route.", status: "DRAFT" } satisfies api.Communication;
+    vi.mocked(api.fetchTasks).mockResolvedValue([task]);
+    vi.mocked(api.fetchCommunications).mockResolvedValue([communication]);
+    vi.mocked(api.fetchAudit).mockResolvedValue([{ id: "AUD-1", eventType: "PLAN_APPROVED", summary: "Plan approved by controller.", contextVersion: 2, occurredAt: "2026-07-17T00:00:00Z", actor: "Controller" }]);
+    vi.mocked(api.updateTask).mockResolvedValue({ ...task, status: "ASSIGNED" });
+    vi.mocked(api.updateCommunication).mockResolvedValue({ ...communication, status: "UNDER_REVIEW" });
+    render(<Home />);
+    const taskButton = await screen.findByRole("button", { name: "Move to ASSIGNED" });
+    expect(screen.getByText("Plan approved by controller.")).toBeVisible();
+    await user.click(taskButton);
+    expect(api.updateTask).toHaveBeenCalledWith("TSK-1", "ASSIGNED", undefined);
+    await user.click(screen.getByRole("button", { name: "Move to UNDER REVIEW" }));
+    expect(api.updateCommunication).toHaveBeenCalledWith("COM-1", "UNDER_REVIEW");
+  });
+
+  it("shows repaired containment as non-actionable until one human approval", async () => {
+    const user = userEvent.setup();
+    const noRoute = { ...normalRoute, found: false, nodeIds: [], edgeIds: [], message: "No verified safe step-free route currently exists.", operationalContextVersion: 4 } satisfies api.RouteResult;
+    const reassessed = {
+      id: "INC-REPAIR", reportIds: ["RPT-1"], status: "PLAN_PROPOSED",
+      verifiedFacts: ["Lift L2 is OUT_OF_SERVICE"], unverifiedClaims: ["Corridor W3 is closed"],
+      impact: { routeResult: noRoute, accessibilityConsequences: ["No verified safe step-free route remains"], contextVersion: 4 },
+      currentPlan: { id: "PLAN-OLD", operationalObjective: "Use W3.", actions: [{ actionType: "STAFF_VERIFIED_ROUTE", title: "Staff W3", assignedTeam: "VENUE_OPERATIONS", locationId: "A_CORRIDOR_W3", rationale: "Previously valid" }], confidence: .8, contextVersion: 2, validity: "UNSAFE", planSource: "GEMINI" },
+      proposedRevision: { id: "PLAN-SAFE", operationalObjective: "Contain safely.", actions: [{ actionType: "ESTABLISH_WAITING_POINT", title: "Keep spectators at the staffed waiting point", assignedTeam: "ACCESSIBILITY_TEAM", locationId: "N_L2_WAIT_2", rationale: "No route" }], confidence: 1, contextVersion: 4, validity: "AWAITING_VERIFICATION", planSource: "DETERMINISTIC_CONTAINMENT" },
+      reassessment: { explanation: "The old route is no longer feasible.", validity: "UNSAFE", requiresHumanReview: true },
+      planRecoveryRecords: [{ validationErrors: [{ code: "NO_VERIFIED_ROUTE", message: "A route action cannot be approved when no verified route exists" }], repairValidationErrors: [], fallbackUsed: true }],
+      tasks: [{ id: "TSK-OLD", title: "Old task", status: "CREATED", assignedTeam: "VENUE_OPERATIONS" }],
+      communications: [{ id: "COM-OLD", language: "en", content: "Old route guidance", status: "SUPERSEDED" }],
+    } satisfies api.Incident;
+    const approved = {
+      ...reassessed,
+      status: "MONITORING",
+      currentPlan: reassessed.proposedRevision,
+      proposedRevision: undefined,
+      reassessment: undefined,
+      tasks: [...reassessed.tasks, { id: "TSK-NEW", title: "Contain spectators", status: "CREATED", assignedTeam: "ACCESSIBILITY_TEAM" }],
+    } satisfies api.Incident;
+    vi.mocked(api.fetchIncidents).mockResolvedValue([reassessed]);
+    vi.mocked(api.fetchTasks).mockResolvedValue(reassessed.tasks);
+    vi.mocked(api.fetchCommunications).mockResolvedValue(reassessed.communications);
+    vi.mocked(api.approveIncident).mockResolvedValue(approved);
+
+    render(<Home />);
+    expect(await screen.findByText("DETERMINISTIC CONTAINMENT")).toBeVisible();
+    expect(screen.getAllByText("No verified safe step-free route currently exists.").length).toBeGreaterThan(0);
+    expect(screen.getByText("No route communication will be generated. Approval creates containment tasks only.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Approve plan and create work" })).toBeDisabled();
+
+    const approval = screen.getByRole("button", { name: "Approve containment revision" });
+    await user.dblClick(approval);
+    expect(api.approveIncident).toHaveBeenCalledTimes(1);
+    expect(api.approveIncident).toHaveBeenCalledWith("INC-REPAIR", true);
+  });
+
+  it("makes every consequential control read-only for a verified viewer", async () => {
+    vi.mocked(api.fetchPrincipal).mockResolvedValue({ uid: "viewer", displayName: "Venue Observer", role: "VIEWER", authMode: "firebase" });
+    render(<Home />);
+    expect(await screen.findByText("Venue Observer")).toBeVisible();
+    expect(await screen.findByRole("status", { name: "" })).toHaveTextContent("Viewer access is read-only");
+    expect(screen.getByRole("button", { name: "1 · Set Lift L2 out of service" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Extract report" })).toBeDisabled();
+    expect(screen.getByLabelText("CSV or JSON evaluator import")).toBeDisabled();
   });
 });

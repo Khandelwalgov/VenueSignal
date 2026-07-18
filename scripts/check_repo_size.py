@@ -2,11 +2,11 @@
 import subprocess
 import sys
 
-def get_tracked_files_size():
+def get_repository_files_size():
     try:
-        # Get list of tracked files
+        # Include tracked and not-yet-staged files while respecting .gitignore.
         result = subprocess.run(
-            ['git', 'ls-files'], 
+            ['git', 'ls-files', '--cached', '--others', '--exclude-standard'],
             stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE, 
             text=True, 
@@ -37,10 +37,10 @@ def main():
     WARNING_LIMIT = 8 * 1024 * 1024 # 8 MB
     ERROR_LIMIT = 9.5 * 1024 * 1024 # 9.5 MB
     
-    total_size = get_tracked_files_size()
+    total_size = get_repository_files_size()
     formatted_size = format_size(total_size)
     
-    print(f"Total tracked repository size: {formatted_size}")
+    print(f"Total repository source size: {formatted_size}")
     
     if total_size > ERROR_LIMIT:
         print(f"ERROR: Repository size exceeds the strict {format_size(ERROR_LIMIT)} limit.", file=sys.stderr)

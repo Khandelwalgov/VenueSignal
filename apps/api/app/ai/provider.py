@@ -4,8 +4,11 @@ from typing import Protocol
 
 from app.domain.workflow.models import (
     ImpactAnalysis,
+    IncidentMatchCandidate,
+    Report,
     ReportExtraction,
     ResponsePlan,
+    PlanValidationError,
 )
 from app.domain.venue.models import Venue
 
@@ -15,8 +18,22 @@ class AIProvider(Protocol):
 
     def extract_report(self, raw_text: str, language: str, venue: Venue) -> ReportExtraction: ...
 
+    def assess_incident_match(
+        self, extraction: ReportExtraction, candidate: Report
+    ) -> IncidentMatchCandidate: ...
+
     def propose_plan(
         self,
+        verified_facts: list[str],
+        unverified_claims: list[str],
+        impact: ImpactAnalysis,
+        venue: Venue,
+    ) -> ResponsePlan: ...
+
+    def repair_plan(
+        self,
+        original_plan: ResponsePlan,
+        validation_errors: list[PlanValidationError],
         verified_facts: list[str],
         unverified_claims: list[str],
         impact: ImpactAnalysis,
@@ -30,15 +47,3 @@ class AIProvider(Protocol):
 
 class GeminiNotConfiguredError(RuntimeError):
     pass
-
-
-class GeminiProvider:
-    """Credential-gated boundary; runtime integration is intentionally not faked."""
-
-    name = "GEMINI"
-
-    def __init__(self, api_key: str | None) -> None:
-        if not api_key:
-            raise GeminiNotConfiguredError(
-                "GEMINI_API_KEY is not configured; use LocalDemoAIProvider for local demo and tests."
-            )

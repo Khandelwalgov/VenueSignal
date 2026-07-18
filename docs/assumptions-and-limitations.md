@@ -1,11 +1,12 @@
 # Assumptions and limitations
 
-- Unity Stadium and every scenario value are synthetic.
-- State is process-local and disappears on restart; multiple API replicas would diverge.
-- The local provider is deterministic keyword/rule logic, not Gemini.
-- Incident matching is an explainable asset/zone shortlist; semantic Gemini matching is not implemented.
-- Imports offer preview and commit but do not yet implement idempotency keys or duplicate suppression.
-- The documented state enum exists, but the local golden path implements the proposal/approval/monitoring slice rather than every possible transition and task lifecycle.
-- Communication is draft generation only; there is no real publication or delivery.
-- Authentication, authorization, rate limiting, Firestore, production monitoring, and live venue integrations are absent.
-- Routes are operational recommendations for a synthetic demo, not certified emergency egress guidance.
+- Unity Stadium and all scenario values are synthetic; routes are not certified emergency-egress guidance.
+- Memory mode disappears on restart. SQLite is durable but single-process. Firestore is required for horizontally scaled production.
+- The local AI provider is deterministic. Live Gemini was verified with the user-configured key and available quota on 18 July 2026; future runs still depend on external availability, quota, and the configured model.
+- Firebase and Firestore adapters require a configured Google Cloud/Firebase project, ADC/service account, users, and role claims.
+- Communication publication is intentionally simulated; no real delivery connector exists.
+- Rate limiting is process-local. A distributed gateway or store is recommended for multi-instance abuse protection.
+- Firestore tasks, communications, and audit events are embedded in incident documents for the current contest scale; high-volume deployments may split subcollections and add transactions/indexes.
+- The application does not process real personal data in the demo. Production privacy, retention, deletion, residency, monitoring, backup, and incident-response policies remain organizational obligations.
+- The deterministic containment plan is deliberately specific to Unity Stadium's Lift L2/Corridor W3 no-route scenario. It does not claim generalized emergency planning or certified egress guidance.
+- Docker was unavailable in this workspace, so the container was inspected but not built locally. Firebase Auth, Firestore/ADC, Secret Manager, Cloud Run, and hosted-domain behavior require live project verification.

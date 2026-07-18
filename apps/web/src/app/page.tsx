@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import DetailsPanel from "@/components/DetailsPanel";
+import AuthPanel from "@/components/AuthPanel";
 import IncidentWorkflow from "@/components/IncidentWorkflow";
 import MapDisplay from "@/components/MapDisplay";
 import {
@@ -16,6 +17,7 @@ import {
   fetchVenue,
   LevelData,
   OperationalState,
+  Principal,
   resetOperationalState,
   RouteResult,
   setAssetStatus,
@@ -38,8 +40,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [principal, setPrincipal] = useState<Principal | null>(null);
 
   useEffect(() => {
+    if (!principal) return;
     let cancelled = false;
     async function loadWorkspace() {
       setLoading(true);
@@ -76,7 +80,9 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [activeLevelId]);
+  }, [activeLevelId, principal]);
+
+  const readOnly = principal?.role !== "CONTROLLER";
 
   const assetTypes = useMemo(
     () => Array.from(new Set(levelData?.assets.map((asset) => asset.type) ?? [])).sort(),
@@ -164,11 +170,21 @@ export default function Home() {
           </div>
           <p>Deterministic venue-state and accessibility inspection</p>
         </div>
-        <div className="venue-health" aria-label={`Unity Stadium status ${venue?.status ?? "loading"}`}>
-          <span className="pulse-dot" aria-hidden="true" />
-          <span><strong>Unity Stadium</strong><small>{venue?.status ?? "Loading venue"}</small></span>
+        <div className="topbar-actions">
+          <AuthPanel onPrincipal={setPrincipal} />
+          <div className="venue-health" aria-label={`Unity Stadium status ${venue?.status ?? "loading"}`}>
+            <span className="pulse-dot" aria-hidden="true" />
+            <span><strong>Unity Stadium</strong><small>{venue?.status ?? "Loading venue"}</small></span>
+          </div>
         </div>
       </header>
+
+      <nav className="area-nav" aria-label="VenueSignal areas">
+        <a href="#main-content">Operations</a><a href="#workflow-title">Reports</a>
+        <a href="#workflow-title">Incidents</a><a href="#map-workspace-title">Venue state</a>
+        <a href="#task-queue">Tasks</a><a href="#communication-queue">Communications</a>
+        <a href="#scenario-title">Scenarios</a><a href="#audit-timeline">Audit</a>
+      </nav>
 
       <div className="prototype-banner">
         <strong>Implemented now:</strong> validated venue graph, versioned operational
@@ -176,8 +192,13 @@ export default function Home() {
         multilingual draft generation, and live plan reassessment.
       </div>
 
-      {error ? (
-        <main id="main-content" className="error-state" role="alert">
+      {!principal ? (
+        <main id="main-content" className="auth-gate" aria-live="polite" tabIndex={-1}>
+          <span aria-hidden="true">◇</span>
+          <div><h2>Verified identity required</h2><p>Sign in above to load protected venue operations. Controller actions remain unavailable until the server confirms your role.</p></div>
+        </main>
+      ) : error ? (
+        <main id="main-content" className="error-state" role="alert" tabIndex={-1}>
           <span aria-hidden="true">!</span>
           <div>
             <h2>Venue data could not be loaded</h2>
@@ -186,7 +207,7 @@ export default function Home() {
           </div>
         </main>
       ) : (
-        <main id="main-content" className="workspace" aria-busy={loading}>
+        <main id="main-content" className="workspace" aria-busy={loading} tabIndex={-1}>
           <aside className="control-rail" aria-label="Venue controls">
             <section>
               <div className="section-heading">
@@ -213,9 +234,9 @@ export default function Home() {
               <div className="section-heading"><div><span className="eyebrow">Synthetic evaluator controls</span><h2 id="scenario-title">Golden route state</h2></div><span className="count-pill">v{operationalState?.contextVersion ?? "—"}</span></div>
               <p className="muted">Each action writes a real operational overlay event and reruns deterministic route validation.</p>
               <div className="scenario-buttons">
-                <button type="button" disabled={mutating} onClick={() => applyAssetOverride("A_LIFT_2", "OUT_OF_SERVICE")}>1 · Set Lift L2 out of service</button>
-                <button type="button" disabled={mutating} onClick={() => applyAssetOverride("A_CORRIDOR_W3", "OUT_OF_SERVICE")}>2 · Close Corridor W3</button>
-                <button type="button" disabled={mutating} onClick={resetScenario}>Reset canonical base state</button>
+                <button type="button" disabled={mutating || readOnly} onClick={() => applyAssetOverride("A_LIFT_2", "OUT_OF_SERVICE")}>1 · Set Lift L2 out of service</button>
+                <button type="button" disabled={mutating || readOnly} onClick={() => applyAssetOverride("A_CORRIDOR_W3", "OUT_OF_SERVICE")}>2 · Close Corridor W3</button>
+                <button type="button" disabled={mutating || readOnly} onClick={resetScenario}>Reset canonical base state</button>
               </div>
             </section>
 
@@ -333,7 +354,7 @@ export default function Home() {
               {currentAccessibilityChecks.length === 0 && <p className="muted">No designated accessibility destinations on this level.</p>}
             </section>
           </aside>
-          <IncidentWorkflow onOperationalChange={refreshOperationalView} />
+          <IncidentWorkflow onOperationalChange={refreshOperationalView} readOnly={readOnly} />
         </main>
       )}
 

@@ -33,6 +33,13 @@ class PlanValidity(str, Enum):
     RESOLVED = "RESOLVED"
 
 
+class PlanSource(str, Enum):
+    GEMINI = "GEMINI"
+    GEMINI_REPAIRED = "GEMINI_REPAIRED"
+    DETERMINISTIC_CONTAINMENT = "DETERMINISTIC_CONTAINMENT"
+    LOCAL_DETERMINISTIC = "LOCAL_DETERMINISTIC"
+
+
 class TaskStatus(str, Enum):
     CREATED = "CREATED"
     ASSIGNED = "ASSIGNED"
@@ -73,6 +80,16 @@ class ReportCreate(CamelModel):
     language: str = Field(default="en", pattern="^(en|es|fr)$")
     source: str = Field(default="EVALUATOR", max_length=80)
     synthetic: bool = True
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=120)
+
+
+class IncidentMatchCandidate(CamelModel):
+    report_id: str
+    score: float = Field(ge=0, le=1)
+    recommendation: str = Field(pattern="^(LINK|CREATE_NEW|HUMAN_REVIEW_REQUIRED)$")
+    reasons: list[str]
+    meaningful_differences: list[str] = Field(default_factory=list)
+    contradictions: list[str] = Field(default_factory=list)
 
 
 class Report(CamelModel):
@@ -83,6 +100,10 @@ class Report(CamelModel):
     synthetic: bool
     extraction: ReportExtraction
     related_report_ids: list[str] = Field(default_factory=list)
+    match_candidates: list[IncidentMatchCandidate] = Field(default_factory=list)
+    fingerprint: str
+    duplicate_of_report_id: str | None = None
+    provenance: str = "USER_SUBMITTED"
     created_at: datetime
 
 
@@ -99,6 +120,9 @@ class ImpactAnalysis(CamelModel):
     inaccessible_destination_ids: list[str]
     accessibility_consequences: list[str]
     route_result: RouteResult
+    rejected_route_reasons: list[str] = Field(default_factory=list)
+    crowd_capacity_concerns: list[str] = Field(default_factory=list)
+    required_capabilities: list[str] = Field(default_factory=list)
     context_version: int
 
 
@@ -123,8 +147,25 @@ class ResponsePlan(CamelModel):
     reassessment_triggers: list[str]
     context_version: int
     validity: PlanValidity
+    plan_source: PlanSource = PlanSource.LOCAL_DETERMINISTIC
     approved_at: datetime | None = None
     approved_by: str | None = None
+
+
+class PlanValidationError(CamelModel):
+    code: str
+    message: str
+    action_index: int | None = None
+
+
+class PlanRecoveryRecord(CamelModel):
+    original_plan: ResponsePlan | None = None
+    validation_errors: list[PlanValidationError] = Field(default_factory=list)
+    repaired_plan: ResponsePlan | None = None
+    repair_validation_errors: list[PlanValidationError] = Field(default_factory=list)
+    repair_error_category: str | None = None
+    fallback_used: bool = False
+    occurred_at: datetime
 
 
 class Task(CamelModel):
@@ -137,6 +178,10 @@ class Task(CamelModel):
     source_plan_id: str
     dependency_task_ids: list[str] = Field(default_factory=list)
     created_at: datetime
+    updated_at: datetime | None = None
+    completed_at: datetime | None = None
+    completion_evidence: str | None = None
+    blocked_reason: str | None = None
 
 
 class Communication(CamelModel):
@@ -147,6 +192,8 @@ class Communication(CamelModel):
     status: CommunicationStatus
     source_plan_id: str
     created_at: datetime
+    updated_at: datetime | None = None
+    reviewed_by: str | None = None
 
 
 class AuditEvent(CamelModel):
@@ -182,6 +229,7 @@ class Incident(CamelModel):
     current_plan: ResponsePlan
     proposed_revision: ResponsePlan | None = None
     reassessment: Reassessment | None = None
+    plan_recovery_records: list[PlanRecoveryRecord] = Field(default_factory=list)
     tasks: list[Task] = Field(default_factory=list)
     communications: list[Communication] = Field(default_factory=list)
     audit_events: list[AuditEvent] = Field(default_factory=list)
@@ -194,9 +242,26 @@ class ApprovalRequest(CamelModel):
     approve_revision: bool = False
 
 
+class TaskUpdate(CamelModel):
+    status: TaskStatus
+    completion_evidence: str | None = Field(default=None, max_length=1000)
+    blocked_reason: str | None = Field(default=None, max_length=500)
+
+
+class CommunicationUpdate(CamelModel):
+    status: CommunicationStatus
+
+
+class IncidentStatusUpdate(CamelModel):
+    status: IncidentStatus
+    reason: str = Field(min_length=3, max_length=500)
+
+
 class ImportPreview(CamelModel):
     format: str
     rows_detected: int
     valid_rows: int
     errors: list[str]
     reports: list[Report] = Field(default_factory=list)
+    duplicate_report_ids: list[str] = Field(default_factory=list)
+    import_fingerprint: str

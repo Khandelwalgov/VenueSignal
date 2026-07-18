@@ -11,6 +11,10 @@ from app.domain.operations.models import (
 )
 from app.domain.venue.enums import AssetStatus, EdgeStatus
 from app.domain.venue.models import Venue
+from app.domain.operations.repository import (
+    InMemoryOperationalStateRepository,
+    OperationalStateRepository,
+)
 
 
 def _now() -> datetime:
@@ -20,10 +24,16 @@ def _now() -> datetime:
 class OperationalStateService:
     """Thread-safe in-memory overlay; canonical venue definitions remain immutable."""
 
-    def __init__(self, venue: Venue) -> None:
+    def __init__(
+        self,
+        venue: Venue,
+        repository: OperationalStateRepository | None = None,
+    ) -> None:
         self._venue = venue
         self._lock = RLock()
-        self._state = OperationalState(last_updated_at=_now())
+        self._repository = repository or InMemoryOperationalStateRepository()
+        self._state = self._repository.load() or OperationalState(last_updated_at=_now())
+        self._repository.save(self._state)
 
     def snapshot(self) -> OperationalState:
         with self._lock:
@@ -52,6 +62,7 @@ class OperationalStateService:
                 source=source,
             )
         )
+        self._repository.save(self._state)
 
     def set_asset_status(
         self, asset_id: str, status: AssetStatus, source: str = "EVALUATOR"

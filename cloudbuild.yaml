@@ -1,0 +1,26 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "apps/api/Dockerfile", "-t", "${_IMAGE}", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "${_IMAGE}"]
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - venuesignal-api
+      - "--image=${_IMAGE}"
+      - "--region=${_REGION}"
+      - "--platform=managed"
+      # Public HTTPS transport; application middleware still requires verified Firebase ID tokens.
+      - "--allow-unauthenticated"
+      - "--set-env-vars=^|^ENVIRONMENT=production|AUTH_MODE=firebase|PERSISTENCE_BACKEND=firestore|AI_PROVIDER=gemini|FIREBASE_PROJECT_ID=${PROJECT_ID}|CORS_ALLOWED_ORIGINS=${_WEB_ORIGIN}|TRUST_PROXY_HEADERS=true|ALLOW_DEMO_RESET=false"
+      - "--set-secrets=GEMINI_API_KEY=venuesignal-gemini-key:latest"
+substitutions:
+  _IMAGE: "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/venuesignal-api:${SHORT_SHA}"
+  _LOCATION: asia-south1
+  _REGION: asia-south1
+  _REPOSITORY: venuesignal
+  _WEB_ORIGIN: https://venuesignal.example.com
+options:
+  logging: CLOUD_LOGGING_ONLY

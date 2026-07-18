@@ -161,3 +161,77 @@ This log records concise engineering decisions and verifiable results. It does n
 - Docker CLI was unavailable in the workspace, so the container definition was reviewed but not locally built.
 
 **Remaining external blockers:** a Gemini credential/integration, Firebase project for Authentication and Firestore, and deployment accounts/URLs. The complete local core loop does not require them.
+
+## 2026-07-18 — Stages F–G and production hardening
+
+**Objective:** Implement persistence, real provider/authentication adapters, full lifecycle hardening, expanded controller UI, deployment configuration, and complete product requirements.
+
+**Key changes**
+
+- Added validated environment configuration that fails unsafe production startup.
+- Added memory, SQLite, and Firestore repositories for operational and workflow state.
+- Added official Gemini structured-output integration with authoritative context, bounded retries, safe error classification, and metadata-only logging.
+- Added Firebase Admin token verification, server-derived controller/viewer roles, optional Firebase web sign-in, and protected every API route.
+- Added request/body limits, rate limiting, trace IDs, browser-security headers, production OpenAPI disablement, explicit CORS, deny-all Firestore client rules, and a non-root container.
+- Added idempotent reports/imports, match evidence, deterministic task/communication/resolution state machines, completion evidence, blocked reasons, and automatic plan reassessment.
+- Expanded the workspace with top-level operational areas, verified identity, CSV/JSON preview, persistent queues, lifecycle controls, translations, and audit timeline.
+- Added Cloud Build, Firestore emulator configuration, production environment template, HTTP seed tooling, dependency audits, and `PRD.md`.
+
+**Tests added:** security/auth roles, rate/body limits, security headers, SQLite recreation, duplicate fingerprints, Gemini structured/error contracts, task dependencies/evidence, communication transitions, resolution, automatic reassessment, identity, upload preview, queues, and audit UI.
+
+**Final verification**
+
+- Backend: 71 tests passed; `pip check` passed; production SDK imports passed.
+- Frontend: 12 tests passed; ESLint passed with zero warnings; TypeScript passed; Next.js production build passed.
+- Dependency security: Python and npm production audits reported zero known vulnerabilities.
+- Configuration: Firebase/Firestore JSON and Cloud Build/GitHub Actions YAML parsed successfully.
+- Browser: full golden flow passed through containment revision approval; verified identity displayed correctly; duplicate plan approval disabled; no browser console warnings/errors.
+- Responsive: no horizontal document overflow at 1280 px, 768 px, or 390 px.
+- Security headers: final frontend response included CSP, no-sniff, deny-frame, no-referrer, permissions, and opener policies without `X-Powered-By`.
+- Repository: whitespace check passed; source size 737.56 KB, including untracked-but-not-ignored release files.
+
+**External verification at that checkpoint:** live Gemini, Firebase, Firestore, Secret Manager, Cloud Run, and hosted frontend credentials; organizational security/privacy/operational acceptance. Docker was unavailable locally, so the container definition was not built in this workspace.
+
+## 2026-07-18 — User-configured live Gemini validation
+
+**Configuration:** The ignored root `.env` selected development auth, memory persistence, and `AI_PROVIDER=gemini` with a present key and `gemini-2.5-flash`. An ignored `apps/web/.env.local` was added for the public local API/auth settings so Next.js consumed the intended values. No secret value was printed, logged, or added to source control.
+
+**Passed**
+
+- Readiness reported a valid graph, memory persistence, disabled local auth, and provider `GEMINI`.
+- A direct synthetic report returned HTTP 200, provider `GEMINI`, 90% confidence, and authoritative candidate `A_LIFT_2`.
+- The browser golden intake produced three structured reports, an 85% human-review match suggestion for the related lift report, and a 10% `CREATE_NEW` suggestion for the crowd report.
+- Controller confirmation produced the deterministic 530 m W3 fallback.
+- Gemini produced a schema-valid, domain-valid initial plan with four actions; approval created four tasks and three multilingual drafts.
+- Closing W3 produced the deterministic no-route state and a Gemini reassessment explanation marked `UNSAFE`.
+- A task advanced from `CREATED` to `ASSIGNED`; the English communication advanced from `DRAFT` to `UNDER_REVIEW`.
+- Browser diagnostics contained no warnings or errors.
+- Existing gates remained green: 71 backend tests, 12 frontend tests, ESLint, TypeScript, production build, dependency consistency, whitespace, and size enforcement.
+
+**Failed safely**
+
+- Gemini's proposed containment revision included `STAFF_VERIFIED_ROUTE` after deterministic routing had established that no verified route existed.
+- Approval returned HTTP 409: `A route action cannot be approved when no verified route exists`.
+- The current approved plan remained preserved and `UNSAFE`; no invalid revision tasks were created.
+
+**Required correction:** prevalidate generated revisions before presenting them as approvable, then perform a bounded repair/regeneration attempt or construct a deterministic containment-only fallback that excludes route staffing until route verification succeeds.
+
+**External verification still required:** Firebase Authentication/custom claims, Firestore/ADC, Secret Manager, Cloud Run, hosted frontend domains, and organizational acceptance.
+
+## 2026-07-18 — Final pre-submission hardening
+
+**Safety recovery:** Generated plans now pass deterministic validation before review. Invalid Gemini proposals and structured errors are retained in recovery records, exactly one authoritative repair call is allowed, repaired proposals are revalidated, and timeout/quota/malformed/second-invalid results fall back to deterministic containment. Sources are explicit: `GEMINI`, `GEMINI_REPAIRED`, `DETERMINISTIC_CONTAINMENT`, and `LOCAL_DETERMINISTIC`.
+
+**No-route enforcement:** Containment excludes `STAFF_VERIFIED_ROUTE`, positive guidance, and communication generation. Earlier route drafts become `SUPERSEDED` when route truth changes. Approval remains mandatory and is idempotent at both service and UI levels.
+
+**Hostile hardening:** Canonical filtering now removes model-invented extraction IDs; instruction detection is deterministic for manual and CSV inputs; recent-report matching is bounded without a fragile category/ID prefilter; production explicitly rejects demo reset; the request limit checks actual streamed bytes as well as declared length; rejection responses receive security headers.
+
+**UX/accessibility:** The no-route state, context version, plan validity, provider/source, repaired/containment distinction, and communication suppression are explicit. Workflow sections use semantic headings and status announcements; duplicate clicks are synchronously guarded; the skip link targets a focusable main region. Responsive checks found no horizontal overflow at 390 px, 768 px, or a 200%-reflow-equivalent 640 CSS px. Reduced motion, mirrored map controls, text route descriptions, and non-colour status symbols remain present.
+
+**Live Gemini acceptance:** Against `gemini-2.5-flash`, readiness and all report calls returned 200; three extractions and bounded match assessments were schema-valid. Controller confirmation returned 200 and a domain-valid initial Gemini plan at context v2; approval returned 200, four tasks, and three language drafts. W3 closure/reassessment returned 200 and no verified route at v3. The first revision failed with `NO_VERIFIED_ROUTE`; one repair produced a schema-valid and domain-valid `GEMINI_REPAIRED` plan with four containment actions. Fallback was not required. Revision approval returned 200; a duplicate UI activation produced one execution request, eight total tasks (four old plus four containment), zero new communications, and three older drafts in `SUPERSEDED`.
+
+**Final gates:** 86 backend tests, 13 frontend tests, ESLint, TypeScript, Next production build, `pip check`, production SDK imports, Python and npm vulnerability audits, JSON/YAML parsing, whitespace, tracked-secret patterns, ignored environment-file checks, and repository-size enforcement all passed. Final source size was 1.17 MB. Docker remained unavailable, so the container was inspected but not locally built.
+
+**Final fallback rerun:** A later fully hardened live rerun reached Gemini quota during plan generation and reassessment. Both calls were safely replaced by approval-gated `DETERMINISTIC_CONTAINMENT`. Two approvals produced eight tasks and zero communications; a repeated revision-approval request left both counts unchanged. This separately proves the quota branch after the earlier successful `GEMINI_REPAIRED` browser run.
+
+**External verification still required:** live Firebase identities/custom claims, Firestore/ADC persistence, Secret Manager/IAM, Cloud Run/container deployment, hosted origins, and organizational privacy/security/assistive-technology acceptance.

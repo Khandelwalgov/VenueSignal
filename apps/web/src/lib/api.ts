@@ -1,3 +1,5 @@
+import { getAuthToken } from "@/lib/auth";
+
 export const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api"
 ).replace(/\/$/, "");
@@ -201,6 +203,12 @@ export interface VenueReport {
   synthetic: boolean;
   extraction: ReportExtraction;
   relatedReportIds: string[];
+  matchCandidates: Array<{
+    reportId: string;
+    score: number;
+    recommendation: "LINK" | "CREATE_NEW" | "HUMAN_REVIEW_REQUIRED";
+    reasons: string[];
+  }>;
   createdAt: string;
 }
 
@@ -219,6 +227,9 @@ export interface ResponsePlan {
   confidence: number;
   contextVersion: number;
   validity: string;
+  planSource: "GEMINI" | "GEMINI_REPAIRED" | "DETERMINISTIC_CONTAINMENT" | "LOCAL_DETERMINISTIC";
+  approvedAt?: string;
+  approvedBy?: string;
 }
 
 export interface WorkflowTask {
@@ -226,6 +237,9 @@ export interface WorkflowTask {
   title: string;
   status: string;
   assignedTeam: string;
+  dependencyTaskIds?: string[];
+  completionEvidence?: string;
+  blockedReason?: string;
 }
 
 export interface Communication {
@@ -245,17 +259,61 @@ export interface Incident {
   currentPlan: ResponsePlan;
   proposedRevision?: ResponsePlan;
   reassessment?: { explanation: string; validity: string; requiresHumanReview: boolean };
+  planRecoveryRecords?: Array<{
+    validationErrors: Array<{ code: string; message: string; actionIndex?: number }>;
+    repairValidationErrors: Array<{ code: string; message: string; actionIndex?: number }>;
+    repairErrorCategory?: string;
+    fallbackUsed: boolean;
+  }>;
   tasks: WorkflowTask[];
   communications: Communication[];
 }
 
+export interface Principal {
+  uid: string;
+  displayName: string;
+  role: "CONTROLLER" | "VIEWER";
+  authMode: string;
+}
+
+export interface AuditEvent {
+  id: string;
+  eventType: string;
+  summary: string;
+  contextVersion: number;
+  occurredAt: string;
+  actor: string;
+}
+
+export interface ImportPreview {
+  format: string;
+  rowsDetected: number;
+  validRows: number;
+  errors: string[];
+  reports: VenueReport[];
+  duplicateReportIds: string[];
+  importFingerprint: string;
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = await getAuthToken();
+  const hasFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
-    headers: { Accept: "application/json", "Content-Type": "application/json", ...init?.headers },
+    headers: {
+      Accept: "application/json",
+      ...(hasFormData ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   });
   if (!response.ok) {
-    throw new Error(`VenueSignal API request failed (${response.status})`);
+    let detail = `VenueSignal API request failed (${response.status})`;
+    try {
+      const body = await response.json() as { detail?: string };
+      if (body.detail) detail = body.detail;
+    } catch { /* Preserve the safe status message. */ }
+    throw new Error(detail);
   }
   const data: unknown = await response.json();
   if (data === null || typeof data !== "object") {
@@ -335,4 +393,70 @@ export function approveIncident(incidentId: string, approveRevision = false): Pr
 
 export function reassessIncident(incidentId: string): Promise<Incident> {
   return requestJson(`/workflow/incidents/${incidentId}/reassess`, { method: "POST" });
+}
+
+export function updateIncidentStatus(
+  incidentId: string,
+  status: "RESOLVED" | "REJECTED",
+  reason: string,
+): Promise<Incident> {
+  return requestJson(`/workflow/incidents/${incidentId}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status, reason }),
+  });
+}
+
+export function fetchPrincipal(): Promise<Principal> {
+  return requestJson("/auth/me");
+}
+
+export function fetchReports(): Promise<VenueReport[]> {
+  return requestJson("/workflow/reports");
+}
+
+export function fetchIncidents(): Promise<Incident[]> {
+  return requestJson("/workflow/incidents");
+}
+
+export function fetchTasks(): Promise<WorkflowTask[]> {
+  return requestJson("/workflow/tasks");
+}
+
+export function fetchCommunications(): Promise<Communication[]> {
+  return requestJson("/workflow/communications");
+}
+
+export function fetchAudit(): Promise<AuditEvent[]> {
+  return requestJson("/workflow/audit");
+}
+
+export function updateTask(
+  taskId: string,
+  status: string,
+  completionEvidence?: string,
+  blockedReason?: string,
+): Promise<WorkflowTask> {
+  return requestJson(`/workflow/tasks/${taskId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, completionEvidence, blockedReason }),
+  });
+}
+
+export function updateCommunication(
+  communicationId: string,
+  status: string,
+): Promise<Communication> {
+  return requestJson(`/workflow/communications/${communicationId}/transition`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function importReports(file: File, commit = false): Promise<ImportPreview> {
+  const form = new FormData();
+  form.append("file", file);
+  return requestJson(`/workflow/reports/import?commit=${commit}`, {
+    method: "POST",
+    body: form,
+  });
 }

@@ -18,7 +18,9 @@ def test_health_and_readiness(client):
     assert client.get("/health").json()["status"] == "ok"
     readiness = client.get("/ready")
     assert readiness.status_code == 200
-    assert readiness.json() == {"status": "ready", "venueGraphValid": True}
+    assert readiness.json()["status"] == "ready"
+    assert readiness.json()["venueGraphValid"] is True
+    assert readiness.json()["persistenceBackend"] == "memory"
 
 
 def test_get_venues(client):

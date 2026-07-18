@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.domain.operations.models import (
     AssetStatusMutation,
@@ -11,6 +11,7 @@ from app.domain.operations.models import (
 )
 from app.domain.operations.routing import RoutingService
 from app.domain.operations.state import OperationalStateService
+from app.security.auth import Principal, current_principal, require_controller
 
 
 router = APIRouter()
@@ -29,7 +30,7 @@ def _routing_service(request: Request) -> RoutingService:
     response_model=OperationalState,
     summary="Read the current versioned operational overlay",
 )
-def get_state(request: Request) -> OperationalState:
+def get_state(request: Request, _principal: Principal = Depends(current_principal)) -> OperationalState:
     return _state_service(request).snapshot()
 
 
@@ -38,7 +39,7 @@ def get_state(request: Request) -> OperationalState:
     response_model=list[OperationalEvent],
     summary="Read operational overlay event history",
 )
-def get_events(request: Request) -> list[OperationalEvent]:
+def get_events(request: Request, _principal: Principal = Depends(current_principal)) -> list[OperationalEvent]:
     return _state_service(request).snapshot().event_history
 
 
@@ -48,12 +49,17 @@ def get_events(request: Request) -> list[OperationalEvent]:
     summary="Apply a validated asset-status override",
 )
 def set_asset_status(
-    request: Request, asset_id: str, mutation: AssetStatusMutation
+    request: Request,
+    asset_id: str,
+    mutation: AssetStatusMutation,
+    principal: Principal = Depends(require_controller),
 ) -> OperationalState:
     try:
-        return _state_service(request).set_asset_status(
-            asset_id, mutation.status, mutation.source
+        result = _state_service(request).set_asset_status(
+            asset_id, mutation.status, f"{principal.uid}:{mutation.source}"
         )
+        request.app.state.workflow_service.reassess_changed_incidents()
+        return result
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
@@ -64,12 +70,17 @@ def set_asset_status(
     summary="Apply a validated edge-status override",
 )
 def set_edge_status(
-    request: Request, edge_id: str, mutation: EdgeStatusMutation
+    request: Request,
+    edge_id: str,
+    mutation: EdgeStatusMutation,
+    principal: Principal = Depends(require_controller),
 ) -> OperationalState:
     try:
-        return _state_service(request).set_edge_status(
-            edge_id, mutation.status, mutation.source
+        result = _state_service(request).set_edge_status(
+            edge_id, mutation.status, f"{principal.uid}:{mutation.source}"
         )
+        request.app.state.workflow_service.reassess_changed_incidents()
+        return result
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
@@ -80,12 +91,17 @@ def set_edge_status(
     summary="Apply a bounded synthetic crowd override",
 )
 def set_edge_crowd(
-    request: Request, edge_id: str, mutation: CrowdMutation
+    request: Request,
+    edge_id: str,
+    mutation: CrowdMutation,
+    principal: Principal = Depends(require_controller),
 ) -> OperationalState:
     try:
-        return _state_service(request).set_edge_crowd(
-            edge_id, mutation.crowd_percent, mutation.source
+        result = _state_service(request).set_edge_crowd(
+            edge_id, mutation.crowd_percent, f"{principal.uid}:{mutation.source}"
         )
+        request.app.state.workflow_service.reassess_changed_incidents()
+        return result
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
@@ -95,8 +111,12 @@ def set_edge_crowd(
     response_model=OperationalState,
     summary="Reset mutable overrides to the canonical base state",
 )
-def reset_state(request: Request) -> OperationalState:
-    return _state_service(request).reset()
+def reset_state(
+    request: Request, principal: Principal = Depends(require_controller)
+) -> OperationalState:
+    if not request.app.state.settings.demo_reset_enabled:
+        raise HTTPException(status_code=403, detail="Demo reset is disabled in this environment")
+    return _state_service(request).reset(f"{principal.uid}:RESET")
 
 
 @router.post(
@@ -104,6 +124,10 @@ def reset_state(request: Request) -> OperationalState:
     response_model=RouteResult,
     summary="Find a deterministic route under current operational constraints",
 )
-def query_route(request: Request, query: RouteQuery) -> RouteResult:
+def query_route(
+    request: Request,
+    query: RouteQuery,
+    _principal: Principal = Depends(current_principal),
+) -> RouteResult:
     state = _state_service(request).snapshot()
     return _routing_service(request).find_route(query, state)

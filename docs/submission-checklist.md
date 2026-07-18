@@ -7,10 +7,14 @@
 - [x] Deterministic accessibility routing and explicit no-route outcome
 - [x] Real evaluator report path, human verification, approval, tasks, drafts, reassessment
 - [x] Prompt-injection handling and deterministic plan validation
+- [x] One-shot invalid-plan repair, audited errors, deterministic containment, and no-route communication suppression
 - [x] Automated backend/frontend gates and repository-size enforcement
 - [x] Health/readiness routes and backend container definition
-- [ ] Live Gemini adapter and credential
-- [ ] Firestore persistence/emulator tooling
-- [ ] Firebase Authentication and CONTROLLER/VIEWER authorization
-- [ ] Production rate limiting, monitoring, and security review
+- [x] Official Gemini structured-output adapter, retries, and contract tests
+- [x] Firestore persistence adapters and emulator configuration
+- [x] Firebase Authentication and CONTROLLER/VIEWER authorization code
+- [x] Rate limiting, request limits, security headers, dependency audits, and non-root container
+- [x] Live Gemini extraction, matching, plan, reassessment, invalid-plan repair, and approval verification
+- [ ] Live Firebase/Firestore project integration and deployed role claims
+- [ ] Production monitoring, privacy, penetration, and operational review
 - [ ] Deployed public URLs and final assistive-technology audit

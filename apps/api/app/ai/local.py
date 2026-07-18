@@ -6,9 +6,13 @@ from uuid import uuid4
 from app.domain.operations.routing import NO_STEP_FREE_ROUTE
 from app.domain.workflow.models import (
     ImpactAnalysis,
+    IncidentMatchCandidate,
     PlanAction,
+    PlanSource,
+    PlanValidationError,
     PlanValidity,
     ReportExtraction,
+    Report,
     ResponsePlan,
 )
 from app.domain.venue.models import Venue
@@ -83,6 +87,32 @@ class LocalDemoAIProvider:
             provider=self.name,
         )
 
+    def assess_incident_match(
+        self, extraction: ReportExtraction, candidate: Report
+    ) -> IncidentMatchCandidate:
+        shared_assets = sorted(
+            set(extraction.candidate_asset_ids).intersection(candidate.extraction.candidate_asset_ids)
+        )
+        shared_zones = sorted(
+            set(extraction.candidate_zone_ids).intersection(candidate.extraction.candidate_zone_ids)
+        )
+        score = min(1.0, 0.62 * bool(shared_assets) + 0.28 * bool(shared_zones) + 0.1)
+        recommendation = "LINK" if score >= 0.75 else "HUMAN_REVIEW_REQUIRED"
+        return IncidentMatchCandidate(
+            report_id=candidate.id,
+            score=score,
+            recommendation=recommendation,
+            reasons=[
+                *(f"Shared asset {asset_id}" for asset_id in shared_assets),
+                *(f"Shared zone {zone_id}" for zone_id in shared_zones),
+            ] or ["Category-compatible report requires controller comparison"],
+            meaningful_differences=(
+                ["Reports describe different symptoms or downstream consequences"]
+                if extraction.observed_symptoms != candidate.extraction.observed_symptoms
+                else []
+            ),
+        )
+
     def propose_plan(
         self,
         verified_facts: list[str],
@@ -154,7 +184,20 @@ class LocalDemoAIProvider:
             ],
             context_version=impact.context_version,
             validity=validity,
+            plan_source=PlanSource.LOCAL_DETERMINISTIC,
         )
+
+    def repair_plan(
+        self,
+        original_plan: ResponsePlan,
+        validation_errors: list[PlanValidationError],
+        verified_facts: list[str],
+        unverified_claims: list[str],
+        impact: ImpactAnalysis,
+        venue: Venue,
+    ) -> ResponsePlan:
+        """Local mode is deterministic; regeneration cannot repeat an invalid action."""
+        return self.propose_plan(verified_facts, unverified_claims, impact, venue)
 
     def explain_reassessment(
         self, old_context_version: int, impact: ImpactAnalysis

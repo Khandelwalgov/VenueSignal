@@ -1,0 +1,4 @@
+-r requirements-base.txt
+firebase-admin==7.5.0
+google-cloud-firestore==2.28.0
+google-genai==2.10.0

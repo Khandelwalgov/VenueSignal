@@ -18,9 +18,20 @@ AI is behind an `AIProvider` protocol. The credential-free local provider produc
 - Incident: controller-verified facts, impact, plans, tasks, drafts, audit events.
 - Approval boundary: plan proposals create no work until controller approval.
 - Reassessment boundary: changed context invalidates the old plan; it is never silently rewritten.
+- Recovery boundary: generated plan → structured deterministic validation → at most one Gemini repair → validation → deterministic containment if still invalid. Only the final valid proposal is exposed for approval; invalid attempts remain audit metadata.
 
 FastAPI lifespan loads and validates the graph before readiness. CORS is allow-listed. The frontend assembles its `/api` base URL exactly once.
 
-## Planned adapters
+## Repository and provider adapters
 
-Firestore repositories, Firebase token verification, and a production Gemini adapter remain planned. These should replace interfaces, not domain rules. Canonical topology must remain separate from Firestore operational records.
+Workflow and operational-state protocols have memory, SQLite, and Firestore implementations. Configuration selects one at startup. The Firestore Admin SDK stores mutable state while canonical topology remains version-controlled JSON. SQLite provides durable single-process local operation.
+
+Authentication supports local development, deterministic tests, and Firebase Admin ID-token verification with controller/viewer claims. AI supports the deterministic local provider and the official Google Gen AI structured-output adapter. External adapters are lazy and credential-dependent, so tests remain isolated.
+
+Plan provenance is part of the domain model: `GEMINI`, `GEMINI_REPAIRED`, `DETERMINISTIC_CONTAINMENT`, or `LOCAL_DETERMINISTIC`. The memory, SQLite, and Firestore repositories serialize the same complete incident model, including recovery records, tasks, drafts, reassessment, and audit events; none depends on a hidden process-only cache beyond the selected repository.
+
+## Production request path
+
+`Firebase client sign-in → bearer ID token → security/rate middleware → Firebase Admin verification → controller/viewer dependency → typed route → domain validation → repository/provider adapter → audit`
+
+Cloud Run uses a non-root container, Secret Manager supplies the Gemini key, Firestore client rules deny direct access, and production disables OpenAPI UI.

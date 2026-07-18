@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // VenueSignal uses the authenticated server-side Admin SDK. Direct clients are denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
