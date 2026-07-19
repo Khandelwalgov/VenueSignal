@@ -235,3 +235,35 @@ This log records concise engineering decisions and verifiable results. It does n
 **Final fallback rerun:** A later fully hardened live rerun reached Gemini quota during plan generation and reassessment. Both calls were safely replaced by approval-gated `DETERMINISTIC_CONTAINMENT`. Two approvals produced eight tasks and zero communications; a repeated revision-approval request left both counts unchanged. This separately proves the quota branch after the earlier successful `GEMINI_REPAIRED` browser run.
 
 **External verification still required:** live Firebase identities/custom claims, Firestore/ADC persistence, Secret Manager/IAM, Cloud Run/container deployment, hosted origins, and organizational privacy/security/assistive-technology acceptance.
+
+## 2026-07-18 — Live Firebase connection preparation
+
+**Connected configuration:** The ignored frontend environment now targets Firebase project `venuesignal` with email/password authentication and the public web-app configuration. The ignored backend environment selects Firebase authentication, Firestore persistence, project `venuesignal`, and the already-working Gemini provider. Offline `disabled`/`memory` defaults remain documented in `.env.example`.
+
+**Live result:** An in-memory Firebase Identity Toolkit login for `admin@venuesignal.com` succeeded and returned an ID token. Neither the password nor token was printed or persisted. The check was authentication-only and is not counted as server authorization.
+
+**Infrastructure tooling:** Added role assignment, isolated Firestore write/read/delete, token-based `/auth/me`, and password-to-token local smoke utilities. Added the project-specific live-deployment runbook, a dedicated Cloud Run service identity in Cloud Build, explicit production Gemini model configuration, public Vercel values, ADC/IAM/Secret Manager commands, restart persistence steps, and the live golden-flow checklist. Private Firebase Admin JSON filenames are ignored; the discovered untracked key file was not read or used and was removed from the repository directory.
+
+**Validation:** 86 backend tests and 13 frontend tests passed. ESLint, TypeScript, the Next production build with Firebase configuration, `pip check`, Python and npm vulnerability audits, Firebase/Cloud Build parsing, deny-all Firestore-rule inspection, whitespace, tracked-secret patterns, ignored-secret checks, one-branch inspection, and the 1.25 MB source-size gate passed.
+
+**Credential blocker:** Application Default Credentials are absent, and `gcloud` and `firebase` are not installed. Therefore the CONTROLLER claim, server-verified `/api/auth/me`, live Firestore smoke/persistence, rules deployment, real viewer authorization, live-infrastructure golden flow, Secret Manager/IAM inspection, Cloud Run, and Vercel-to-API browser acceptance remain intentionally unexecuted. The exact non-key ADC commands are in `docs/live-deployment.md`; no service-account JSON key is required or permitted.
+## 19 July 2026 — Final frontend refinement and demo continuity
+
+- Reduced the first-visit tutorial to six keyboard-accessible steps with persistent completion and direct Guided Demo / Explore Dashboard exits.
+- Reworked the first screen around the product thesis, primary Guided Demo action, compact operational summary, stadium map, and current situation.
+- Tightened the six guided stages with explicit unverified-evidence, AI-insight, deterministic-validation, and human-approval boundaries.
+- Strengthened the W3-closure screen with the unsafe previous plan, withheld route guidance, safe containment, and second approval gate.
+- Added compact language selection for simulated communication drafts and moved auth/provider internals under progressive disclosure.
+- Added a quota-only server-side guided-demo fallback. It is restricted to `GUIDED_DEMO` reports, persists `GUIDED_DEMO_QUOTA_FALLBACK` provenance, uses the labelled deterministic local provider, and never changes manual report fail-closed behavior.
+- Browser validation completed the real six-step API flow in isolated local-controller mode and checked 390, 640, 768, and 1280 px layouts. No console errors or page-level horizontal overflow were found.
+- Final gates: 91 backend tests and 17 frontend interaction tests passed; ESLint, TypeScript, and the Firebase-configured Next.js production build passed. The remaining warning is Starlette's third-party `TestClient`/`httpx` deprecation notice.
+
+## 19 July 2026 — Judge demo access
+
+**Objective:** Let a PromptWars evaluator understand the product, use the dedicated Firebase account, and reach the Guided Demo without exposing credentials or weakening authorization.
+
+**Implementation:** Replaced the compact signed-out header form with a dedicated Demo Controller access screen. It pre-fills only `admin@venuesignal.com`, preserves password-manager semantics, keeps the password empty and masked, supports native Enter submission, announces `Signing in…`, and normalizes provider errors into concise evaluator copy. The tutorial and internal navigation remain hidden until authentication; after server verification, identity collapses to `Demo Controller` and `CONTROLLER`, with auth mode retained only under system details. The operational empty state now also offers the Guided Demo directly.
+
+**Security:** No password endpoint, public credential flag, client secret, signup, anonymous access, or role selector was added. Firebase email/password sign-in, bearer-token verification, and the server-authoritative `CONTROLLER` claim remain unchanged. Current tracked files, build output, and available Git history contain neither the previously shared demo password nor the pasted OpenAI secret prefix.
+
+**Validation:** 22 frontend tests, ESLint, TypeScript, the Firebase-configured production build, 11 backend security tests, scoped whitespace validation, and the 1.41 MB repository-size gate passed. Browser checks at 390 px, 768 px, and the 200%-zoom equivalent found no page overflow or console error. Live incognito sign-in remains a submission action because the compromised development password must first be rotated.

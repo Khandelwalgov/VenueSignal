@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from threading import RLock
 from uuid import uuid4
 
+from app.ai.gemini import AIProviderQuotaError
 from app.ai.provider import AIProvider
 from app.domain.operations.models import RouteConstraints, RouteQuery
 from app.domain.operations.routing import RoutingService
@@ -83,12 +84,14 @@ class WorkflowService:
         routing_service: RoutingService,
         ai_provider: AIProvider,
         repository: WorkflowRepository | None = None,
+        guided_demo_fallback_provider: AIProvider | None = None,
     ) -> None:
         self.venue = venue
         self.state_service = state_service
         self.routing_service = routing_service
         self.ai_provider = ai_provider
         self.repository = repository or InMemoryWorkflowRepository()
+        self.guided_demo_fallback_provider = guided_demo_fallback_provider
         self._lock = RLock()
 
     def list_reports(self) -> list[Report]:
@@ -117,7 +120,16 @@ class WorkflowService:
         existing = self.repository.find_report_by_fingerprint(fingerprint)
         if existing:
             return existing
-        extraction = self.ai_provider.extract_report(request.raw_text, request.language, self.venue)
+        provider = self.ai_provider
+        fallback_used = False
+        try:
+            extraction = provider.extract_report(request.raw_text, request.language, self.venue)
+        except AIProviderQuotaError:
+            if request.source != "GUIDED_DEMO" or self.guided_demo_fallback_provider is None:
+                raise
+            provider = self.guided_demo_fallback_provider
+            extraction = provider.extract_report(request.raw_text, request.language, self.venue)
+            fallback_used = True
         valid_asset_ids = {asset.id for asset in self.venue.assets}
         valid_zone_ids = {zone.id for zone in self.venue.zones}
         extraction.candidate_asset_ids = [
@@ -129,11 +141,41 @@ class WorkflowService:
         if UNTRUSTED_INSTRUCTION_PATTERN.search(request.raw_text):
             extraction.untrusted_instruction_detected = True
         candidates = []
-        # The model may label semantically related evidence with different categories or
-        # omit an identifier. Compare a bounded recent set so that prefilter variance
-        # cannot suppress human-reviewable related-report reasoning.
-        for report in self.repository.list_reports()[-20:]:
-            candidates.append(self.ai_provider.assess_incident_match(extraction, report))
+        stored_reports = self.repository.list_reports()
+        if stored_reports:
+            extraction_assets = set(extraction.candidate_asset_ids)
+            extraction_zones = set(extraction.candidate_zone_ids)
+
+            def relevance(report: Report) -> tuple[int, datetime]:
+                shared_assets = extraction_assets.intersection(
+                    report.extraction.candidate_asset_ids
+                )
+                shared_zones = extraction_zones.intersection(
+                    report.extraction.candidate_zone_ids
+                )
+                score = (
+                    2 * bool(shared_assets)
+                    + bool(shared_zones)
+                    + (report.extraction.category == extraction.category)
+                )
+                return score, report.created_at
+
+            # Relationship reasoning is advisory and quota-sensitive. Select the single
+            # strongest recent candidate deterministically, then ask the configured AI
+            # provider for the human-reviewable comparison. This prevents a populated
+            # Firestore project from causing one model call per historical report.
+            candidate_report = max(stored_reports, key=relevance)
+            try:
+                candidates.append(provider.assess_incident_match(extraction, candidate_report))
+            except AIProviderQuotaError:
+                if request.source != "GUIDED_DEMO" or self.guided_demo_fallback_provider is None:
+                    raise
+                candidates.append(
+                    self.guided_demo_fallback_provider.assess_incident_match(
+                        extraction, candidate_report
+                    )
+                )
+                fallback_used = True
         report = Report(
             id=f"RPT-{fingerprint[:12].upper()}",
             raw_text=request.raw_text,
@@ -144,7 +186,15 @@ class WorkflowService:
             related_report_ids=[candidate.report_id for candidate in candidates],
             match_candidates=sorted(candidates, key=lambda item: item.score, reverse=True),
             fingerprint=fingerprint,
-            provenance="EVALUATOR_UPLOAD" if "UPLOAD" in request.source else "MANUAL_ENTRY",
+            provenance=(
+                "GUIDED_DEMO_QUOTA_FALLBACK"
+                if fallback_used
+                else "GUIDED_DEMO"
+                if request.source == "GUIDED_DEMO"
+                else "EVALUATOR_UPLOAD"
+                if "UPLOAD" in request.source
+                else "MANUAL_ENTRY"
+            ),
             created_at=_now(),
         )
         self.repository.save_report(report)
@@ -251,7 +301,20 @@ class WorkflowService:
             ]
             unverified_claims = [claim for report in reports for claim in report.extraction.unverified_claims]
             plan, recovery = self._generate_reviewable_plan(
-                verified_facts, unverified_claims, impact
+                verified_facts,
+                unverified_claims,
+                impact,
+                allow_guided_fallback=any(report.source == "GUIDED_DEMO" for report in reports),
+            )
+            plan_actor = (
+                self.guided_demo_fallback_provider.name
+                if self.guided_demo_fallback_provider is not None
+                and plan.plan_source == PlanSource.LOCAL_DETERMINISTIC
+                and any(
+                    report.provenance == "GUIDED_DEMO_QUOTA_FALLBACK"
+                    for report in reports
+                )
+                else self.ai_provider.name
             )
             now = _now()
             incident = Incident(
@@ -274,9 +337,9 @@ class WorkflowService:
                     incident,
                     "PLAN_RECOVERED",
                     f"Unavailable or invalid model output was contained; source {plan.plan_source.value} is ready for human review.",
-                    self.ai_provider.name,
+                    plan_actor,
                 )
-            self._audit(incident, "PLAN_PROPOSED", f"{plan.plan_source.value} proposed a deterministically valid plan; approval required.", self.ai_provider.name)
+            self._audit(incident, "PLAN_PROPOSED", f"{plan.plan_source.value} proposed a deterministically valid plan; approval required.", plan_actor)
             self.repository.save_incident(incident)
             return incident.model_copy(deep=True)
 
@@ -385,8 +448,10 @@ class WorkflowService:
         verified_facts: list[str],
         unverified_claims: list[str],
         impact: ImpactAnalysis,
+        provider: AIProvider | None = None,
     ) -> tuple[ResponsePlan, PlanRecoveryRecord | None]:
-        if self.ai_provider.name == "GEMINI":
+        active_provider = provider or self.ai_provider
+        if active_provider.name == "GEMINI":
             proposed_plan.plan_source = PlanSource.GEMINI
         errors = self._plan_validation_errors(proposed_plan, impact)
         if not errors:
@@ -398,7 +463,7 @@ class WorkflowService:
             occurred_at=_now(),
         )
         try:
-            repaired = self.ai_provider.repair_plan(
+            repaired = active_provider.repair_plan(
                 proposed_plan,
                 errors,
                 verified_facts,
@@ -408,7 +473,7 @@ class WorkflowService:
             )
             repaired.plan_source = (
                 PlanSource.GEMINI_REPAIRED
-                if self.ai_provider.name == "GEMINI"
+                if active_provider.name == "GEMINI"
                 else repaired.plan_source
             )
             record.repaired_plan = repaired.model_copy(deep=True)
@@ -431,11 +496,30 @@ class WorkflowService:
         verified_facts: list[str],
         unverified_claims: list[str],
         impact: ImpactAnalysis,
+        allow_guided_fallback: bool = False,
     ) -> tuple[ResponsePlan, PlanRecoveryRecord | None]:
+        provider = self.ai_provider
         try:
-            proposed = self.ai_provider.propose_plan(
+            proposed = provider.propose_plan(
                 verified_facts, unverified_claims, impact, self.venue
             )
+        except AIProviderQuotaError as error:
+            if (
+                allow_guided_fallback
+                and impact.route_result.found
+                and self.guided_demo_fallback_provider is not None
+            ):
+                provider = self.guided_demo_fallback_provider
+                proposed = provider.propose_plan(
+                    verified_facts, unverified_claims, impact, self.venue
+                )
+            else:
+                fallback = self._deterministic_containment_plan(impact)
+                return fallback, PlanRecoveryRecord(
+                    repair_error_category=type(error).__name__,
+                    fallback_used=True,
+                    occurred_at=_now(),
+                )
         except Exception as error:
             fallback = self._deterministic_containment_plan(impact)
             return fallback, PlanRecoveryRecord(
@@ -444,7 +528,7 @@ class WorkflowService:
                 occurred_at=_now(),
             )
         return self._recover_invalid_plan(
-            proposed, verified_facts, unverified_claims, impact
+            proposed, verified_facts, unverified_claims, impact, provider
         )
 
     def _validate_plan(self, incident: Incident, approve_revision: bool) -> None:
@@ -587,7 +671,14 @@ class WorkflowService:
                         communication.status = CommunicationStatus.SUPERSEDED
                         communication.updated_at = _now()
                 incident.proposed_revision, recovery = self._generate_reviewable_plan(
-                    incident.verified_facts, incident.unverified_claims, impact
+                    incident.verified_facts,
+                    incident.unverified_claims,
+                    impact,
+                    allow_guided_fallback=any(
+                        (report := self.repository.get_report(report_id)) is not None
+                        and report.source == "GUIDED_DEMO"
+                        for report_id in incident.report_ids
+                    ),
                 )
                 if recovery:
                     incident.plan_recovery_records.append(recovery)

@@ -4,6 +4,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Home from "./page";
 import * as api from "@/lib/api";
+import { TUTORIAL_STORAGE_KEY } from "@/components/Tutorial";
+
+const storage = new Map<string, string>();
+Object.defineProperty(window, "localStorage", {
+  configurable: true,
+  value: {
+    clear: () => storage.clear(),
+    getItem: (key: string) => storage.get(key) ?? null,
+    removeItem: (key: string) => storage.delete(key),
+    setItem: (key: string, value: string) => storage.set(key, String(value)),
+  },
+});
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
@@ -87,28 +99,42 @@ function mockSuccess() {
   vi.mocked(api.fetchAudit).mockResolvedValue([]);
 }
 
-describe("VenueSignal Phase 1 workspace", () => {
+describe("VenueSignal frontend experience", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.setItem(TUTORIAL_STORAGE_KEY, "true");
     mockSuccess();
   });
 
-  it("renders disclosure, validation, statistics, text alternative, and non-colour legend", async () => {
+  it("renders the calm operational overview and keeps technical detail progressive", async () => {
+    const user = userEvent.setup();
     render(<Home />);
-    expect(await screen.findByText("Validated canonical graph")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "AI-assisted incident intelligence for stadium operations." })).toBeVisible();
+    expect(screen.getByText("AI proposes. Deterministic logic verifies. Humans decide.")).toBeVisible();
+    const hero = document.querySelector<HTMLElement>(".hero-copy");
+    expect(hero).not.toBeNull();
+    expect(within(hero!).getByRole("button", { name: /Start Guided Demo/i })).toBeVisible();
+    expect(within(hero!).getByRole("link", { name: "Explore Dashboard" })).toBeVisible();
+    expect(within(hero!).getByRole("button", { name: "Quick Tour" })).toBeVisible();
     expect(screen.getByText(/Unity Stadium is synthetic/)).toBeVisible();
+    expect(await screen.findByRole("group", { name: /operations map/i })).toBeVisible();
+    expect(screen.getByText("AI insight")).toBeVisible();
+    expect(screen.getByText("Deterministic validation")).toBeVisible();
+    expect(screen.queryByText("Validated safety graph")).not.toBeVisible();
+    await user.click(screen.getByText("Venue and system details"));
+    expect(screen.getByText("Validated safety graph")).toBeVisible();
+    expect(screen.queryByText("Components")).not.toBeVisible();
+    await user.click(screen.getByText("Technical graph and system details"));
     expect(screen.getByText("Components")).toBeVisible();
-    expect(screen.getByRole("group", { name: /operations map/i })).toBeVisible();
-    expect(screen.getByText("✓ Open")).toBeVisible();
-    expect(screen.getByText("! Restricted")).toBeVisible();
-    expect(screen.getByText("× Closed")).toBeVisible();
+    expect(screen.getByText("Auth mode")).toBeVisible();
     expect(screen.getAllByText("Sections 209-218").length).toBeGreaterThan(0);
   });
 
   it("switches levels and selects a zone through mirrored controls", async () => {
     const user = userEvent.setup();
     render(<Home />);
-    await screen.findByText("Validated canonical graph");
+    await screen.findByText("All systems operational");
+    await user.click(screen.getByText("Venue and system details"));
     await user.click(screen.getByRole("button", { name: /Level 1, Lower concourse/i }));
     await waitFor(() => expect(api.fetchLevel).toHaveBeenLastCalledWith("unity-stadium", "L1"));
     const zoneList = screen.getByRole("group", { name: "Zones on current level" });
@@ -119,7 +145,8 @@ describe("VenueSignal Phase 1 workspace", () => {
   it("selects multi-level Lift L2 on Level 2 and shows details", async () => {
     const user = userEvent.setup();
     render(<Home />);
-    await screen.findByText("Validated canonical graph");
+    await screen.findByText("All systems operational");
+    await user.click(screen.getByText("Venue and system details"));
     await user.click(screen.getByRole("button", { name: /Level 2, Upper concourse/i }));
     const facilityList = screen.getByRole("group", { name: "Facilities on current level" });
     await user.click(within(facilityList).getByRole("button", { name: /Lift L2/i }));
@@ -130,7 +157,8 @@ describe("VenueSignal Phase 1 workspace", () => {
   it("filters facilities and supports keyboard activation on the map", async () => {
     const user = userEvent.setup();
     render(<Home />);
-    await screen.findByText("Validated canonical graph");
+    await screen.findByText("All systems operational");
+    await user.click(screen.getByText("Venue and system details"));
     await user.selectOptions(screen.getByLabelText("Facility filter"), "STAIRS");
     const facilityList = screen.getByRole("group", { name: "Facilities on current level" });
     expect(within(facilityList).queryByRole("button", { name: /Lift L2/i })).not.toBeInTheDocument();
@@ -156,26 +184,27 @@ describe("VenueSignal Phase 1 workspace", () => {
     vi.mocked(api.setAssetStatus).mockResolvedValue(failedState);
     vi.mocked(api.fetchGoldenStepFreeRoute).mockResolvedValueOnce(normalRoute).mockResolvedValue(noRoute);
     render(<Home />);
-    await screen.findByText("Normal route verified");
+    await screen.findByText("All systems operational");
+    await user.click(screen.getByText("Venue and system details"));
+    await user.click(screen.getByText("Evaluator scenario controls"));
     await user.click(screen.getByRole("button", { name: "2 · Close Corridor W3" }));
-    expect(await screen.findByText("No verified route")).toBeVisible();
-    expect(screen.getByText("No verified safe step-free route currently exists.")).toBeVisible();
-    expect(screen.getByText(/Do not publish route guidance/)).toBeVisible();
+    expect(await screen.findByText("Containment required")).toBeVisible();
+    expect(screen.getByText("Restricted")).toBeVisible();
   });
 
   it("announces a loading state while data is pending", async () => {
     vi.mocked(api.fetchVenue).mockReturnValue(new Promise(() => undefined));
     render(<Home />);
-    await screen.findByText("Local Demo Controller");
-    expect(screen.getByRole("status")).toHaveTextContent("Loading validated stadium graph");
+    await screen.findByText("Demo Controller");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading validated stadium map");
   });
 
-  it("keeps report extraction advisory and requires approval before creating work", async () => {
+  it("runs the six-step guided demo through real APIs and preserves human approval", async () => {
     const user = userEvent.setup();
     const reports = [1, 2, 3].map((number) => ({
       id: `RPT-${number}`, rawText: `Synthetic report ${number}`, language: "en", source: "EVALUATOR_UI", synthetic: true,
       extraction: { category: "FACILITY_OUTAGE", summary: `Synthetic report ${number}`, candidateZoneIds: ["Z_L2_W"], candidateAssetIds: ["A_LIFT_2"], affectedGroups: [], observedSymptoms: [], urgencySuggestion: "HIGH", confidence: .86, unverifiedClaims: [`Synthetic report ${number}`], missingInformation: ["Controller verification"], clarificationQuestions: [], untrustedInstructionDetected: false, provider: "LOCAL_DEMO_PROVIDER" },
-      relatedReportIds: [], matchCandidates: [], createdAt: "2026-07-15T00:00:00Z",
+      relatedReportIds: [], matchCandidates: [], provenance: "GUIDED_DEMO_QUOTA_FALLBACK", createdAt: "2026-07-15T00:00:00Z",
     })) satisfies api.VenueReport[];
     const proposed = {
       id: "INC-1", reportIds: ["RPT-1", "RPT-2"], status: "PLAN_PROPOSED", verifiedFacts: ["Lift L2 is OUT_OF_SERVICE"], unverifiedClaims: reports.map((report) => report.rawText),
@@ -198,47 +227,126 @@ describe("VenueSignal Phase 1 workspace", () => {
     vi.mocked(api.approveIncident).mockResolvedValue(approved);
     vi.mocked(api.reassessIncident).mockResolvedValue(reassessed);
     render(<Home />);
-    await screen.findByText("Validated canonical graph");
-    const loadScenario = screen.getByRole("button", { name: "Load 3-report scenario" });
-    loadScenario.focus();
-    expect(loadScenario).toHaveFocus();
-    await user.keyboard("{Enter}");
-    expect(await screen.findAllByText(/unverified claim/i)).toHaveLength(3);
-    const confirmIncident = screen.getByRole("button", { name: "Confirm incident and analyse impact" });
+    await screen.findByText("All systems operational");
+    const startDemo = within(document.querySelector<HTMLElement>(".hero-copy")!).getByRole("button", { name: /Start Guided Demo/i });
+    await user.click(startDemo);
+    expect(await screen.findByText("Three reports arrive")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Analyse reports" }));
+    expect(await screen.findByText("AI suggests an incident relationship")).toBeVisible();
+    expect(screen.getByText(/guided demo used the labelled local extraction fallback/i)).toBeVisible();
+    expect(api.createReport).toHaveBeenCalledTimes(3);
+    expect(api.createReport).toHaveBeenNthCalledWith(1, expect.any(String), true);
+    expect(screen.getAllByText("Unverified evidence")).toHaveLength(4);
+    const guidedStage = document.querySelector<HTMLElement>(".incident-stage");
+    expect(guidedStage).not.toBeNull();
+    const confirmIncident = within(guidedStage!).getByRole("button", { name: "Confirm incident" });
     confirmIncident.focus();
     expect(confirmIncident).toHaveFocus();
     await user.keyboard("{Enter}");
-    expect(await screen.findByText("Fallback route verified")).toBeVisible();
-    expect(screen.queryByText(/tasks ·/)).not.toBeInTheDocument();
-    const approvePlan = screen.getByRole("button", { name: "Approve plan and create work" });
+    expect(await screen.findByText("Accessibility impact verified")).toBeVisible();
+    expect(api.createIncident).toHaveBeenCalledWith(["RPT-1", "RPT-2"]);
+    await user.click(screen.getByRole("button", { name: "Review response" }));
+    expect(await screen.findByText("AI proposal")).toBeVisible();
+    expect(screen.getByText("Deterministic validation · passed")).toBeVisible();
+    const approvePlan = screen.getByRole("button", { name: "Approve plan" });
     approvePlan.focus();
     expect(approvePlan).toHaveFocus();
     await user.keyboard("{Enter}");
-    expect(await screen.findByText("✓ 1 tasks · 1 multilingual drafts")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Approve plan and create work" })).toBeDisabled();
-    const reassess = screen.getByRole("button", { name: "Close W3 and reassess" });
+    expect(await screen.findByRole("heading", { name: "Response activated" })).toBeVisible();
+    expect(screen.getByText("Operational tasks created")).toBeVisible();
+    const reassess = screen.getByRole("button", { name: "Continue scenario" });
     reassess.focus();
     expect(reassess).toHaveFocus();
     await user.keyboard("{Enter}");
-    expect(await screen.findByText("NO VERIFIED STEP-FREE ROUTE")).toBeVisible();
+    expect(await screen.findAllByText("No verified safe step-free route")).not.toHaveLength(0);
+    expect(screen.getByText("Unsafe")).toBeVisible();
+    expect(screen.getByText(/Corridor W3 closed/)).toBeVisible();
+    expect(screen.getByText("× No route guidance will be published.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Approve containment revision" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Review containment plan" }));
     expect(screen.getByRole("button", { name: "Approve containment revision" })).toBeEnabled();
   });
 
-  it("shows the server-verified identity and complete operating areas", async () => {
+  it("keeps a transient report-analysis failure visible and safely retryable", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.createReport).mockRejectedValueOnce(
+      new Error(
+        "Gemini quota is currently unavailable. The guided demo cannot continue until quota is restored.",
+      ),
+    );
     render(<Home />);
-    expect(await screen.findByText("Local Demo Controller")).toBeVisible();
-    expect(screen.getByText("CONTROLLER · disabled")).toBeVisible();
+    await screen.findByText("All systems operational");
+    await user.click(within(document.querySelector<HTMLElement>(".hero-copy")!).getByRole("button", { name: /Start Guided Demo/i }));
+    await user.click(screen.getByRole("button", { name: "Analyse reports" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Gemini quota is currently unavailable",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "The guided scenario did not advance. Retry to resume the idempotent analysis.",
+    );
+    expect(screen.getByRole("button", { name: "Retry analysis" })).toBeEnabled();
+  });
+
+  it("shows the verified identity and four primary operating areas", async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+    expect(await screen.findByText("Demo Controller")).toBeVisible();
+    expect(screen.getByText("CONTROLLER")).toBeVisible();
+    expect(screen.queryByText(/CONTROLLER · disabled/)).not.toBeInTheDocument();
     const navigation = screen.getByRole("navigation", { name: "VenueSignal areas" });
-    for (const area of ["Operations", "Reports", "Incidents", "Venue state", "Tasks", "Communications", "Scenarios", "Audit"]) {
+    for (const area of ["Operations", "Incidents", "Tasks", "Communications"]) {
       expect(within(navigation).getByRole("link", { name: area })).toBeVisible();
     }
+    expect(within(navigation).getByText("More")).toBeVisible();
+    await user.click(within(navigation).getByText("More"));
+    expect(within(navigation).getByRole("link", { name: "Reports" })).toBeVisible();
+    expect(within(navigation).getByRole("link", { name: "Audit" })).toBeVisible();
+  });
+
+  it("offers a first-visit tutorial that can be skipped and reopened", async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    const firstVisit = render(<Home />);
+    const dialog = await screen.findByRole("dialog", { name: "Welcome to VenueSignal" });
+    expect(dialog).toHaveAttribute("aria-modal", "false");
+    await user.click(within(dialog).getByRole("button", { name: "Skip tour" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(TUTORIAL_STORAGE_KEY)).toBe("true");
+    firstVisit.unmount();
+    render(<Home />);
+    await screen.findByText("Demo Controller");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Tutorial" }));
+    expect(await screen.findByRole("dialog", { name: "Welcome to VenueSignal" })).toBeVisible();
+  });
+
+  it("supports keyboard navigation and Escape in the tutorial", async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    render(<Home />);
+    const dialog = await screen.findByRole("dialog", { name: "Welcome to VenueSignal" });
+    dialog.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("dialog", { name: "Reports are evidence" })).toBeVisible();
+    await user.keyboard("{ArrowLeft}");
+    expect(screen.getByRole("dialog", { name: "Welcome to VenueSignal" })).toBeVisible();
+    for (let step = 0; step < 5; step += 1) await user.keyboard("{ArrowRight}");
+    const finalStep = screen.getByRole("dialog", { name: "Safe failure" });
+    expect(within(finalStep).getByLabelText("Tutorial step 6 of 6")).toBeVisible();
+    expect(within(finalStep).getByRole("button", { name: "Start Guided Demo" })).toBeVisible();
+    expect(within(finalStep).getByRole("button", { name: "Explore dashboard" })).toBeVisible();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("previews evaluator uploads through the real import API", async () => {
     const user = userEvent.setup();
     vi.mocked(api.importReports).mockResolvedValue({ format: "CSV", rowsDetected: 1, validRows: 1, errors: [], reports: [], duplicateReportIds: [], importFingerprint: "abc" });
     render(<Home />);
-    await screen.findByText("Validated canonical graph");
+    await screen.findByText("All systems operational");
+    await user.click(screen.getByText("Reports and evaluator intake"));
+    await user.click(screen.getByText("Import CSV or JSON"));
     const file = new File(["rawText,language\nLift L2 is stuck,en"], "reports.csv", { type: "text/csv" });
     await user.upload(screen.getByLabelText("CSV or JSON evaluator import"), file);
     await user.click(screen.getByRole("button", { name: "Preview import" }));
@@ -256,12 +364,34 @@ describe("VenueSignal Phase 1 workspace", () => {
     vi.mocked(api.updateTask).mockResolvedValue({ ...task, status: "ASSIGNED" });
     vi.mocked(api.updateCommunication).mockResolvedValue({ ...communication, status: "UNDER_REVIEW" });
     render(<Home />);
-    const taskButton = await screen.findByRole("button", { name: "Move to ASSIGNED" });
+    await screen.findByText("1 operational assignments");
+    await user.click(screen.getByText("Tasks", { selector: "b" }));
+    const taskButton = screen.getByRole("button", { name: "Move to ASSIGNED" });
+    await user.click(screen.getByText("Audit and technical details"));
     expect(screen.getByText("Plan approved by controller.")).toBeVisible();
     await user.click(taskButton);
     expect(api.updateTask).toHaveBeenCalledWith("TSK-1", "ASSIGNED", undefined);
+    await user.click(screen.getByText("Communications", { selector: "b" }));
     await user.click(screen.getByRole("button", { name: "Move to UNDER REVIEW" }));
     expect(api.updateCommunication).toHaveBeenCalledWith("COM-1", "UNDER_REVIEW");
+  });
+
+  it("shows one communication language at a time and labels delivery as simulated", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.fetchCommunications).mockResolvedValue([
+      { id: "COM-EN", language: "en", content: "English draft", status: "DRAFT" },
+      { id: "COM-ES", language: "es", content: "Spanish draft", status: "DRAFT" },
+      { id: "COM-FR", language: "fr", content: "French draft", status: "DRAFT" },
+    ]);
+    render(<Home />);
+    await screen.findByText("3 human-reviewed drafts");
+    await user.click(screen.getByText("Communications", { selector: "b" }));
+    expect(screen.getByText("Simulated drafts only. Nothing is delivered to the public.")).toBeVisible();
+    expect(screen.getByText("English draft")).toBeVisible();
+    expect(screen.queryByText("Spanish draft")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Spanish" }));
+    expect(screen.getByText("Spanish draft")).toBeVisible();
+    expect(screen.queryByText("English draft")).not.toBeInTheDocument();
   });
 
   it("shows repaired containment as non-actionable until one human approval", async () => {
@@ -292,11 +422,12 @@ describe("VenueSignal Phase 1 workspace", () => {
     vi.mocked(api.approveIncident).mockResolvedValue(approved);
 
     render(<Home />);
-    expect(await screen.findByText("DETERMINISTIC CONTAINMENT")).toBeVisible();
-    expect(screen.getAllByText("No verified safe step-free route currently exists.").length).toBeGreaterThan(0);
-    expect(screen.getByText("No route communication will be generated. Approval creates containment tasks only.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Approve plan and create work" })).toBeDisabled();
-
+    expect(await screen.findByText("Review containment")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Review no-route containment" }));
+    expect(screen.getAllByText("No verified safe step-free route").length).toBeGreaterThan(0);
+    expect(screen.getByText("× No route guidance will be published.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Approve containment revision" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Review containment plan" }));
     const approval = screen.getByRole("button", { name: "Approve containment revision" });
     await user.dblClick(approval);
     expect(api.approveIncident).toHaveBeenCalledTimes(1);
@@ -304,11 +435,15 @@ describe("VenueSignal Phase 1 workspace", () => {
   });
 
   it("makes every consequential control read-only for a verified viewer", async () => {
+    const user = userEvent.setup();
     vi.mocked(api.fetchPrincipal).mockResolvedValue({ uid: "viewer", displayName: "Venue Observer", role: "VIEWER", authMode: "firebase" });
     render(<Home />);
     expect(await screen.findByText("Venue Observer")).toBeVisible();
-    expect(await screen.findByRole("status", { name: "" })).toHaveTextContent("Viewer access is read-only");
+    expect(await screen.findByText(/Viewer access is read-only/)).toBeVisible();
+    await user.click(screen.getByText("Venue and system details"));
+    await user.click(screen.getByText("Evaluator scenario controls"));
     expect(screen.getByRole("button", { name: "1 · Set Lift L2 out of service" })).toBeDisabled();
+    await user.click(screen.getByText("Reports and evaluator intake"));
     expect(screen.getByRole("button", { name: "Extract report" })).toBeDisabled();
     expect(screen.getByLabelText("CSV or JSON evaluator import")).toBeDisabled();
   });

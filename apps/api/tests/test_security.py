@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
-from app.ai.gemini import AIProviderTimeout
+from app.ai.gemini import AIProviderQuotaError, AIProviderTimeout
 from app.main import create_app
 from app.security.auth import AuthService, AuthenticationError, Role
 
@@ -152,3 +152,24 @@ def test_initial_ai_failure_is_sanitized_and_changes_no_workflow_state():
         )
         assert "internal upstream detail" not in response.text
         assert client.get("/api/workflow/reports").json() == []
+
+
+def test_ai_quota_failure_is_actionable_without_leaking_upstream_detail():
+    class QuotaProvider:
+        name = "GEMINI"
+
+        def extract_report(self, *_args, **_kwargs):
+            raise AIProviderQuotaError("private project quota detail")
+
+    with TestClient(create_app()) as client:
+        client.app.state.workflow_service.ai_provider = QuotaProvider()
+        response = client.post(
+            "/api/workflow/reports", json={"rawText": "Lift L2 is stuck"}
+        )
+
+        assert response.status_code == 503
+        assert response.json()["detail"] == (
+            "Gemini quota is currently unavailable. The guided demo cannot continue "
+            "until quota is restored."
+        )
+        assert "private project quota detail" not in response.text

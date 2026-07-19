@@ -156,10 +156,25 @@ class LocalDemoAIProvider:
                     rationale=NO_STEP_FREE_ROUTE,
                 ),
                 PlanAction(
+                    action_type="DISPATCH_ACCESSIBILITY_TEAM",
+                    title="Dispatch accessibility assistance to the waiting point",
+                    assigned_team="ACCESSIBILITY_TEAM",
+                    location_id="N_L2_WAIT_2",
+                    rationale="Affected spectators require human assistance while movement is contained.",
+                    depends_on_action_indexes=[0],
+                ),
+                PlanAction(
+                    action_type="INSPECT_ASSET",
+                    title="Inspect Lift L2 before any route reassessment",
+                    assigned_team="MAINTENANCE",
+                    location_id="A_LIFT_2",
+                    rationale="Only an authoritative facility-state change can restore route eligibility.",
+                ),
+                PlanAction(
                     action_type="VERIFY_ROUTE_STATUS",
-                    title="Verify Lift L2 and Corridor W3 conditions",
+                    title="Verify Corridor W3 status and reassess",
                     assigned_team="VENUE_OPERATIONS",
-                    location_id="Z_L2_W_CONCOURSE",
+                    location_id="A_CORRIDOR_W3",
                     rationale="Do not publish unverified route guidance.",
                 ),
             ]

@@ -15,6 +15,13 @@
 - [x] Firebase Authentication and CONTROLLER/VIEWER authorization code
 - [x] Rate limiting, request limits, security headers, dependency audits, and non-root container
 - [x] Live Gemini extraction, matching, plan, reassessment, invalid-plan repair, and approval verification
-- [ ] Live Firebase/Firestore project integration and deployed role claims
+- [x] Firebase project/web configuration and real administrator email/password sign-in
+- [x] Judge-facing Demo Controller access screen with public email only
+- [x] Demo password absent from tracked source, examples, documentation, and client environment
+- [ ] ADC-backed CONTROLLER claim, server token verification, and Firestore persistence
+- [ ] Rotate the demo password immediately before submission
+- [ ] Verify the `CONTROLLER` claim with a fresh token in an incognito browser
+- [ ] Complete the public-URL Guided Demo from a signed-out state
+- [ ] Provide the exact rotated password only in PromptWars submission notes
 - [ ] Production monitoring, privacy, penetration, and operational review
 - [ ] Deployed public URLs and final assistive-technology audit

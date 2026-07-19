@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import router as api_router
 from app.ai import GeminiProvider, LocalDemoAIProvider
-from app.ai.gemini import AIProviderError
+from app.ai.gemini import AIProviderError, AIProviderQuotaError
 from app.config import Settings
 from app.domain.operations.repository import (
     FirestoreOperationalStateRepository,
@@ -75,6 +75,7 @@ def create_app(
             application.state.routing_service,
             application.state.ai_provider,
             workflow_repository,
+            guided_demo_fallback_provider=LocalDemoAIProvider(),
         )
         application.state.auth_service = AuthService(
             configuration.auth_mode, configuration.firebase_project_id
@@ -108,9 +109,16 @@ def create_app(
 
     @application.exception_handler(AIProviderError)
     async def ai_provider_failure(_request: Request, _error: AIProviderError):
+        logger.warning("AI advisory request failed category=%s", type(_error).__name__)
+        detail = (
+            "Gemini quota is currently unavailable. The guided demo cannot continue "
+            "until quota is restored."
+            if isinstance(_error, AIProviderQuotaError)
+            else "AI advisory service is temporarily unavailable; no workflow state was changed"
+        )
         return JSONResponse(
             status_code=503,
-            content={"detail": "AI advisory service is temporarily unavailable; no workflow state was changed"},
+            content={"detail": detail},
         )
 
     @application.get("/health", tags=["Health"], summary="Process health")

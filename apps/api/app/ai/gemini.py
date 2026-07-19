@@ -102,13 +102,31 @@ class GeminiProvider:
                 )
                 return result
             except (ValidationError, ValueError, TypeError, AttributeError) as error:
-                raise AIProviderMalformedResponse("Gemini returned an invalid structured response") from error
+                last_error = error
+                if attempt == attempt_limit:
+                    raise AIProviderMalformedResponse(
+                        "Gemini returned an invalid structured response after bounded retries"
+                    ) from error
+                logger.warning(
+                    "Gemini structured response invalid task=%s model=%s attempt=%d; retrying",
+                    task,
+                    self.model,
+                    attempt,
+                )
+                time.sleep(min(0.25 * 2 ** (attempt - 1), 1.0))
             except Exception as error:
                 last_error = error
                 name = type(error).__name__.lower()
                 message = str(error).lower()
                 if "quota" in name or "resourceexhausted" in name or "429" in message:
-                    raise AIProviderQuotaError("Gemini quota is unavailable") from error
+                    if attempt == attempt_limit:
+                        raise AIProviderQuotaError("Gemini quota is unavailable") from error
+                    logger.warning(
+                        "Gemini quota unavailable task=%s model=%s attempt=%d; retrying",
+                        task,
+                        self.model,
+                        attempt,
+                    )
                 if "timeout" in name or "deadline" in name:
                     if attempt == attempt_limit:
                         raise AIProviderTimeout("Gemini request timed out") from error

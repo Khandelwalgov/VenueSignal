@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.ai.local import LocalDemoAIProvider
+from app.ai.gemini import AIProviderQuotaError
 from app.domain.operations.routing import NO_STEP_FREE_ROUTE, RoutingService
 from app.domain.operations.state import OperationalStateService
 from app.domain.venue.enums import AssetStatus
@@ -46,6 +47,56 @@ def create_golden_reports(workflow):
     ]
 
 
+def test_guided_demo_uses_labelled_local_fallback_only_when_gemini_quota_is_exhausted():
+    class QuotaProvider(LocalDemoAIProvider):
+        name = "GEMINI"
+
+        def extract_report(self, *_args, **_kwargs):
+            raise AIProviderQuotaError("private quota detail")
+
+        def propose_plan(self, *_args, **_kwargs):
+            raise AIProviderQuotaError("private quota detail")
+
+    venue = VenueService().load_canonical_venue()
+    state = OperationalStateService(venue)
+    workflow = WorkflowService(
+        venue,
+        state,
+        RoutingService(venue),
+        QuotaProvider(),
+        guided_demo_fallback_provider=LocalDemoAIProvider(),
+    )
+
+    reports = [
+        workflow.create_report(ReportCreate(raw_text=text, source="GUIDED_DEMO"))
+        for text in GOLDEN_REPORTS
+    ]
+    assert all(report.extraction.provider == "LOCAL_DEMO_PROVIDER" for report in reports)
+    assert all(report.provenance == "GUIDED_DEMO_QUOTA_FALLBACK" for report in reports)
+
+    incident = workflow.create_incident(
+        IncidentCreate(
+            report_ids=[reports[0].id, reports[1].id],
+            confirmed_asset_id="A_LIFT_2",
+        )
+    )
+    assert incident.current_plan.plan_source.value == "LOCAL_DETERMINISTIC"
+    approved = workflow.approve_plan(
+        incident.id, ApprovalRequest(approved_by="Evaluator Controller")
+    )
+    assert len(approved.tasks) == 3
+    assert len(approved.communications) == 3
+
+    workflow.state_service.set_asset_status(
+        "A_CORRIDOR_W3", AssetStatus.OUT_OF_SERVICE, "EVALUATOR_WORKFLOW"
+    )
+    reassessed = workflow.reassess(incident.id)
+    assert reassessed.current_plan.validity == PlanValidity.UNSAFE
+    assert reassessed.impact.route_result.message == NO_STEP_FREE_ROUTE
+    assert reassessed.proposed_revision is not None
+    assert len(reassessed.proposed_revision.actions) == 4
+
+
 def test_report_extraction_is_unverified_and_related_reports_are_suggested(workflow):
     reports = create_golden_reports(workflow)
     first, second, third = reports
@@ -55,6 +106,29 @@ def test_report_extraction_is_unverified_and_related_reports_are_suggested(workf
     assert first.id in second.related_report_ids
     assert first.id in third.related_report_ids or second.id in third.related_report_ids
     assert all(report.extraction.provider == "LOCAL_DEMO_PROVIDER" for report in reports)
+
+
+def test_report_relationship_reasoning_is_bounded_to_one_model_call():
+    class CountingProvider(LocalDemoAIProvider):
+        def __init__(self):
+            self.match_calls = 0
+
+        def assess_incident_match(self, extraction, candidate):
+            self.match_calls += 1
+            return super().assess_incident_match(extraction, candidate)
+
+    venue = VenueService().load_canonical_venue()
+    provider = CountingProvider()
+    bounded_workflow = WorkflowService(
+        venue,
+        OperationalStateService(venue),
+        RoutingService(venue),
+        provider,
+    )
+
+    create_golden_reports(bounded_workflow)
+
+    assert provider.match_calls == 2
 
 
 def test_prompt_injection_is_flagged_and_not_interpreted_as_instruction(workflow):

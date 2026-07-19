@@ -7,6 +7,7 @@ interface MapDisplayProps {
   selectedEntityId: string | null;
   visibleAssetIds: string[];
   routeEdgeIds?: string[];
+  showGraphDetails?: boolean;
   onSelectEntity: (id: string) => void;
 }
 
@@ -45,6 +46,7 @@ export default function MapDisplay({
   selectedEntityId,
   visibleAssetIds,
   routeEdgeIds = [],
+  showGraphDetails = false,
   onSelectEntity,
 }: MapDisplayProps) {
   const visibleAssets = new Set(visibleAssetIds);
@@ -52,7 +54,7 @@ export default function MapDisplay({
   return (
     <svg
       viewBox="0 0 1000 1000"
-      className="stadium-map"
+      className={`stadium-map ${showGraphDetails ? "show-graph-details" : "operational-map"}`}
       aria-labelledby="map-title map-description"
       role="group"
     >

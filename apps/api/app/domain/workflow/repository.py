@@ -154,7 +154,16 @@ class FirestoreWorkflowRepository:
         if deterministic.exists:
             return Report.model_validate(deterministic.to_dict())
         # Legacy fallback for records created before deterministic report identifiers.
-        snapshots = list(self.reports.where("fingerprint", "==", fingerprint).limit(1).stream())
+        try:
+            from google.cloud.firestore_v1.base_query import FieldFilter
+
+            query = self.reports.where(
+                filter=FieldFilter("fingerprint", "==", fingerprint)
+            )
+        except (ImportError, TypeError):
+            # Compatibility with lightweight test doubles and older Firestore clients.
+            query = self.reports.where("fingerprint", "==", fingerprint)
+        snapshots = list(query.limit(1).stream())
         return Report.model_validate(snapshots[0].to_dict()) if snapshots else None
 
     def list_incidents(self) -> list[Incident]:

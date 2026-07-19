@@ -33,6 +33,10 @@ __pycache__/
 !.env.example
 !apps/web/.env.example
 
+# Private Google/Firebase credentials (use Application Default Credentials instead)
+*-firebase-adminsdk-*.json
+application_default_credentials.json
+
 # OS metadata
 .DS_Store
 Thumbs.db

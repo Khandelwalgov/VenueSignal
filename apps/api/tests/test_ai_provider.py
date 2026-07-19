@@ -53,17 +53,38 @@ def test_gemini_uses_structured_schema_and_authoritative_context():
 
 
 def test_gemini_rejects_malformed_structured_output():
-    models = Models([SimpleNamespace(parsed=None, text="not-json")])
+    models = Models([SimpleNamespace(parsed=None, text="not-json")] * 3)
     provider = GeminiProvider(None, client=SimpleNamespace(models=models))
     with pytest.raises(AIProviderMalformedResponse):
         provider.extract_report("Lift L2 is stuck", "en", VenueService().load_canonical_venue())
+    assert len(models.calls) == 3
+
+
+def test_gemini_retries_malformed_structured_output(monkeypatch):
+    monkeypatch.setattr("app.ai.gemini.time.sleep", lambda _seconds: None)
+    models = Models(
+        [
+            SimpleNamespace(parsed=None, text="not-json"),
+            SimpleNamespace(parsed=extraction(), text=None),
+        ]
+    )
+    provider = GeminiProvider(None, client=SimpleNamespace(models=models))
+
+    result = provider.extract_report(
+        "Lift L2 is stuck", "en", VenueService().load_canonical_venue()
+    )
+
+    assert result.provider == "GEMINI"
+    assert len(models.calls) == 2
 
 
 def test_gemini_classifies_quota_and_retries_timeouts(monkeypatch):
     monkeypatch.setattr("app.ai.gemini.time.sleep", lambda _seconds: None)
-    quota = GeminiProvider(None, client=SimpleNamespace(models=Models([RuntimeError("429 quota")])))
+    quota_models = Models([RuntimeError("429 quota")] * 3)
+    quota = GeminiProvider(None, client=SimpleNamespace(models=quota_models))
     with pytest.raises(AIProviderQuotaError):
         quota.extract_report("Lift L2 is stuck", "en", VenueService().load_canonical_venue())
+    assert len(quota_models.calls) == 3
 
     timeout = GeminiProvider(
         None,
@@ -71,6 +92,21 @@ def test_gemini_classifies_quota_and_retries_timeouts(monkeypatch):
     )
     with pytest.raises(AIProviderTimeout):
         timeout.extract_report("Lift L2 is stuck", "en", VenueService().load_canonical_venue())
+
+
+def test_gemini_retries_transient_quota_exhaustion(monkeypatch):
+    monkeypatch.setattr("app.ai.gemini.time.sleep", lambda _seconds: None)
+    models = Models(
+        [RuntimeError("429 resource exhausted"), SimpleNamespace(parsed=extraction(), text=None)]
+    )
+    provider = GeminiProvider(None, client=SimpleNamespace(models=models))
+
+    result = provider.extract_report(
+        "Lift L2 is stuck", "en", VenueService().load_canonical_venue()
+    )
+
+    assert result.provider == "GEMINI"
+    assert len(models.calls) == 2
 
 
 def test_gemini_repair_prompt_is_authoritative_and_has_one_model_attempt():

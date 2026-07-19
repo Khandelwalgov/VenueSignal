@@ -209,6 +209,7 @@ export interface VenueReport {
     recommendation: "LINK" | "CREATE_NEW" | "HUMAN_REVIEW_REQUIRED";
     reasons: string[];
   }>;
+  provenance?: string;
   createdAt: string;
 }
 
@@ -370,10 +371,10 @@ export function fetchGoldenStepFreeRoute(): Promise<RouteResult> {
   });
 }
 
-export function createReport(rawText: string): Promise<VenueReport> {
+export function createReport(rawText: string, guidedDemo = false): Promise<VenueReport> {
   return requestJson("/workflow/reports", {
     method: "POST",
-    body: JSON.stringify({ rawText, language: "en", source: "EVALUATOR_UI", synthetic: true }),
+    body: JSON.stringify({ rawText, language: "en", source: guidedDemo ? "GUIDED_DEMO" : "EVALUATOR_UI", synthetic: true }),
   });
 }
 
