@@ -440,7 +440,7 @@ A subsequent fully hardened rerun reached Gemini quota during initial plan gener
 
 The completed repository was verified on 18 July 2026 with:
 
-- 91 backend tests passing in Python 3.12;
+- 93 backend tests passing in Python 3.12;
 - 22 frontend interaction tests passing;
 - zero ESLint warnings or errors;
 - successful TypeScript static checking;

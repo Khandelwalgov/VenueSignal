@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: venuesignal-api
+    runtime: python
+    plan: free
+    region: singapore
+    branch: main
+    rootDir: apps/api
+    buildCommand: pip install -r requirements-production.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*" --no-server-header
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.13
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTH_MODE
+        value: firebase
+      - key: PERSISTENCE_BACKEND
+        value: firestore
+      - key: FIREBASE_PROJECT_ID
+        value: venuesignal
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-service-account.json
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://venuesignal.vercel.app
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      - key: ALLOW_DEMO_RESET
+        value: "false"
+      - key: RATE_LIMIT_REQUESTS
+        value: "180"
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: "60"
+      - key: MAX_REQUEST_BYTES
+        value: "300000"

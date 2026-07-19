@@ -267,3 +267,13 @@ This log records concise engineering decisions and verifiable results. It does n
 **Security:** No password endpoint, public credential flag, client secret, signup, anonymous access, or role selector was added. Firebase email/password sign-in, bearer-token verification, and the server-authoritative `CONTROLLER` claim remain unchanged. Current tracked files, build output, and available Git history contain neither the previously shared demo password nor the pasted OpenAI secret prefix.
 
 **Validation:** 22 frontend tests, ESLint, TypeScript, the Firebase-configured production build, 11 backend security tests, scoped whitespace validation, and the 1.41 MB repository-size gate passed. Browser checks at 390 px, 768 px, and the 200%-zoom equivalent found no page overflow or console error. Live incognito sign-in remains a submission action because the compromised development password must first be rotated.
+
+## 19 July 2026 — Render deployment preparation
+
+**Topology:** Vercel hosts the Next.js browser app, which uses public Firebase web configuration only for email/password sign-in and ID-token acquisition. Render hosts FastAPI, verifies Firebase tokens through a private Firebase Admin secret file, and owns Firestore and Gemini access. No browser Firestore connection, service-account credential, Gemini secret, password, or role selector was added.
+
+**Deployment artifacts:** Added a Render Blueprint, a gitignored `.env-prod` checklist with a tracked `.env-prod.example`, a public Vercel production example, a guarded Vercel configuration script, and a single Render-first deployment guide. The stable CORS origin is `https://venuesignal.vercel.app`. Render's exact native-Python build/start commands and `/health` check are fixed in source control.
+
+**Reset and shared state:** Added an ADC-backed operator script that previews and then explicitly clears persisted demo reports/incidents and restores canonical operational state. Production HTTP reset remains disabled. Operational services now reload repository state so separate Render instances observe Firestore changes and operator resets.
+
+**Validation:** 93 backend and 22 frontend tests passed. ESLint, TypeScript, Render production-setting validation, canonical venue resolution from the Render root directory, Blueprint/YAML parsing, shell syntax, and dry-run guards passed. The Render backend URL, secret file, and Vercel API URL remain deployment-time values.

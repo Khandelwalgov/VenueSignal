@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.domain.operations.models import RouteConstraints, RouteQuery
+from app.domain.operations.repository import InMemoryOperationalStateRepository
 from app.domain.operations.routing import NO_STEP_FREE_ROUTE, RoutingService
 from app.domain.operations.state import OperationalStateService
 from app.domain.venue.enums import AssetStatus, EdgeStatus
@@ -37,6 +38,23 @@ def test_operational_mutations_increment_context_and_preserve_canonical(venue, o
     assert (first.context_version, second.context_version, third.context_version) == (2, 3, 4)
     assert original.status == AssetStatus.OPERATIONAL
     assert len(third.event_history) == 3
+
+
+def test_separate_service_instances_refresh_shared_operational_state(venue):
+    repository = InMemoryOperationalStateRepository()
+    first = OperationalStateService(venue, repository)
+    second = OperationalStateService(venue, repository)
+
+    first.set_asset_status("A_LIFT_2", AssetStatus.OUT_OF_SERVICE)
+    refreshed = second.snapshot()
+
+    assert refreshed.context_version == 2
+    assert refreshed.asset_status_overrides["A_LIFT_2"] == AssetStatus.OUT_OF_SERVICE
+
+    first.reset("OPERATOR_RESET")
+    restored = second.snapshot()
+    assert restored.context_version == 3
+    assert restored.asset_status_overrides == {}
 
 
 def test_golden_route_state_sequence(venue, operations, route_query):

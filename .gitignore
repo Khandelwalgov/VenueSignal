@@ -30,7 +30,9 @@ __pycache__/
 # Environment
 .env
 .env.*
+.env-prod
 !.env.example
+!.env-prod.example
 !apps/web/.env.example
 
 # Private Google/Firebase credentials (use Application Default Credentials instead)

@@ -105,7 +105,7 @@ See [testing](docs/testing.md), [accessibility](docs/accessibility.md), and the 
 
 ## Deployment readiness
 
-The backend includes a Cloud Run-compatible Dockerfile and configurable restricted CORS. From the repository root, build with `docker build -f apps/api/Dockerfile -t venuesignal-api .`; replace the Cloud Build `_WEB_ORIGIN` substitution with the deployed frontend origin. The frontend can be deployed to Vercel or Firebase Hosting with `NEXT_PUBLIC_API_BASE_URL=https://api.example/api`.
+The deployed topology is Vercel for the Next.js browser app and Render for FastAPI. The browser uses Firebase Authentication only; Render verifies the resulting ID token and owns all Firestore and Gemini access. Follow [DEPLOY.md](DEPLOY.md) for the exact Render fields shown in the dashboard, separated Render/Vercel environment variables, Firebase Admin secret-file setup, Vercel redeployment, and operator-only base-scenario reset. Cloud Run remains an optional alternative documented in [docs/live-deployment.md](docs/live-deployment.md).
 
 Production deployment requires custom role claims, deployed secrets, a final frontend origin, and operational/security/privacy review. Adapter code, emulator configuration, Cloud Build, non-root container, and environment templates are included. Follow the project-specific [live deployment runbook](docs/live-deployment.md), then review [assumptions and limitations](docs/assumptions-and-limitations.md) and the [submission checklist](docs/submission-checklist.md).
 

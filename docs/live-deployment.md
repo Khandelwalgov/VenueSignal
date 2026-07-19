@@ -17,6 +17,10 @@ This runbook connects the existing VenueSignal application to its live Google in
 
 Never put the demo password, Gemini API key, Firebase ID tokens, ADC files, or service-account JSON keys in the repository. The Firebase web API key and web app identifiers are public application configuration, not backend credentials.
 
+## Optional Cloud Run deployment path
+
+The primary submission path now uses Render for the backend and Vercel for the frontend; see [DEPLOY.md](../DEPLOY.md). The remaining sections preserve Cloud Run as a Google-managed alternative. Cloud Run requires billing on project `venuesignal`, which is not currently attached.
+
 ## PromptWars demo access
 
 - Demo account email: `admin@venuesignal.com`
@@ -333,13 +337,13 @@ gcloud artifacts repositories describe venuesignal --location asia-south1 --proj
 
 ## 11. Deploy Cloud Run
 
-Set the actual HTTPS frontend origin—without a path—as `_WEB_ORIGIN`:
+The stable HTTPS frontend origin is `https://venuesignal.vercel.app`. It is already the guarded Cloud Build default and can still be overridden explicitly:
 
 ```bash
 gcloud builds submit \
   --project venuesignal \
   --config cloudbuild.yaml \
-  --substitutions=_WEB_ORIGIN=https://YOUR-VERCEL-DOMAIN
+  --substitutions=_WEB_ORIGIN=https://venuesignal.vercel.app
 ```
 
 The build deploys `venuesignal-api` with the dedicated service identity, Firestore persistence, Firebase authentication, Gemini, Secret Manager, trusted proxy handling, disabled demo resets, and an exact CORS origin. Cloud Run is transport-public so browser bearer tokens can reach it; FastAPI remains the application authorization boundary.
@@ -372,7 +376,19 @@ Redeploy the frontend after changing `NEXT_PUBLIC_*` values because Next.js embe
 
 Add the final Vercel hostname to Firebase Authentication's authorized domains. Redeploy Cloud Run with `_WEB_ORIGIN` exactly equal to that frontend origin. Do not use `*`, include multiple production origins, or include a URL path.
 
-## 13. Final live acceptance record
+## 13. Reset the shared demo to canonical base state
+
+Do not enable the public workflow-reset route in production. Use the ADC-backed operator script instead:
+
+```bash
+FIREBASE_PROJECT_ID=venuesignal venv/bin/python scripts/reset_live_demo.py
+FIREBASE_PROJECT_ID=venuesignal venv/bin/python scripts/reset_live_demo.py \
+  --execute --confirm-project venuesignal
+```
+
+The first command is read-only and reports current report/incident counts. The second deletes workflow documents and writes a clean operational-state singleton. It never modifies Firebase accounts or credentials. API instances reload shared operational state from Firestore on subsequent requests.
+
+## 14. Final live acceptance record
 
 Capture pass/fail and timestamps for:
 

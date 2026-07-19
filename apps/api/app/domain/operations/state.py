@@ -35,8 +35,18 @@ class OperationalStateService:
         self._state = self._repository.load() or OperationalState(last_updated_at=_now())
         self._repository.save(self._state)
 
+    def _refresh_from_repository(self) -> None:
+        """Reload shared state so separate Cloud Run instances converge on Firestore."""
+        persisted = self._repository.load()
+        if persisted is None:
+            self._state = OperationalState(last_updated_at=_now())
+            self._repository.save(self._state)
+        else:
+            self._state = persisted
+
     def snapshot(self) -> OperationalState:
         with self._lock:
+            self._refresh_from_repository()
             return self._state.model_copy(deep=True)
 
     def _record(
@@ -71,6 +81,7 @@ class OperationalStateService:
         if asset is None:
             raise KeyError(f"Unknown asset: {asset_id}")
         with self._lock:
+            self._refresh_from_repository()
             previous = self._state.asset_status_overrides.get(asset_id, asset.status)
             self._state.asset_status_overrides[asset_id] = status
             self._record(
@@ -89,6 +100,7 @@ class OperationalStateService:
         if edge is None:
             raise KeyError(f"Unknown edge: {edge_id}")
         with self._lock:
+            self._refresh_from_repository()
             previous = self._state.edge_status_overrides.get(edge_id, edge.status)
             self._state.edge_status_overrides[edge_id] = status
             self._record(
@@ -109,6 +121,7 @@ class OperationalStateService:
         if edge is None:
             raise KeyError(f"Unknown edge: {edge_id}")
         with self._lock:
+            self._refresh_from_repository()
             previous = self._state.edge_crowd_overrides.get(
                 edge_id, edge.current_crowd_percent
             )
@@ -124,6 +137,7 @@ class OperationalStateService:
 
     def reset(self, source: str = "EVALUATOR") -> OperationalState:
         with self._lock:
+            self._refresh_from_repository()
             previous_version = self._state.context_version
             history = list(self._state.event_history)
             self._state = OperationalState(

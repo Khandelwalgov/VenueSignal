@@ -13,16 +13,23 @@ steps:
       - "--region=${_REGION}"
       - "--platform=managed"
       - "--service-account=${_RUNTIME_SERVICE_ACCOUNT}"
+      - "--port=8080"
+      - "--cpu=1"
+      - "--memory=1Gi"
+      - "--concurrency=8"
+      - "--timeout=300"
+      - "--min-instances=0"
+      - "--max-instances=2"
       # Public HTTPS transport; application middleware still requires verified Firebase ID tokens.
       - "--allow-unauthenticated"
       - "--set-env-vars=^|^ENVIRONMENT=production|AUTH_MODE=firebase|PERSISTENCE_BACKEND=firestore|AI_PROVIDER=gemini|GEMINI_MODEL=gemini-2.5-flash|FIREBASE_PROJECT_ID=${PROJECT_ID}|CORS_ALLOWED_ORIGINS=${_WEB_ORIGIN}|TRUST_PROXY_HEADERS=true|ALLOW_DEMO_RESET=false"
       - "--set-secrets=GEMINI_API_KEY=venuesignal-gemini-key:latest"
 substitutions:
-  _IMAGE: "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/venuesignal-api:${SHORT_SHA}"
+  _IMAGE: "${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/venuesignal-api:${BUILD_ID}"
   _LOCATION: asia-south1
   _REGION: asia-south1
   _REPOSITORY: venuesignal
   _RUNTIME_SERVICE_ACCOUNT: venuesignal-api@venuesignal.iam.gserviceaccount.com
-  _WEB_ORIGIN: https://venuesignal.example.com
+  _WEB_ORIGIN: https://venuesignal.vercel.app
 options:
   logging: CLOUD_LOGGING_ONLY
