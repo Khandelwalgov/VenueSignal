@@ -183,7 +183,7 @@ Deterministic validation runs before a proposal is exposed and again at approval
 
 If the first Gemini plan is invalid, VenueSignal preserves it in a recovery record, supplies the exact errors and current authoritative context to exactly one repair call, and validates again. A valid repair is exposed as `GEMINI_REPAIRED`. A second invalid output, timeout, quota error, or malformed output produces `DETERMINISTIC_CONTAINMENT`. The fallback is bounded to waiting-point, accessibility-dispatch, asset-inspection, and route-status-verification actions. No recursive generation occurs, and every source still requires human approval.
 
-The six-step guided scenario has an additional quota-only continuity boundary. A controller-submitted report marked `GUIDED_DEMO` may fall back server-side to `LOCAL_DEMO_PROVIDER` only when Gemini raises the classified quota error. The persisted report is labelled `GUIDED_DEMO_QUOTA_FALLBACK`, the UI discloses the switch, and the normal incident, deterministic routing, validation, approval, task, communication, state-mutation, and reassessment APIs continue. Ordinary/manual report intake never uses this path and remains fail-closed. No third-party API key is accepted by the browser.
+The six-step guided scenario has an additional AI-availability continuity boundary. A controller-submitted report marked `GUIDED_DEMO` may fall back server-side to `LOCAL_DEMO_PROVIDER` when Gemini raises a classified provider, quota, timeout, or malformed-response error. The persisted report is labelled `GUIDED_DEMO_AI_FALLBACK`, the UI discloses the switch, and the normal incident, deterministic routing, validation, approval, task, communication, state-mutation, and reassessment APIs continue. Ordinary/manual report intake never uses this path and remains fail-closed. No third-party API key is accepted by the browser.
 
 ### 8.9 Tasks
 
@@ -440,7 +440,7 @@ A subsequent fully hardened rerun reached Gemini quota during initial plan gener
 
 The completed repository was verified on 18 July 2026 with:
 
-- 93 backend tests passing in Python 3.12;
+- 99 backend tests passing in Python 3.12;
 - 22 frontend interaction tests passing;
 - zero ESLint warnings or errors;
 - successful TypeScript static checking;

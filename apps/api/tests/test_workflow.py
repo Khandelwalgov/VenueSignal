@@ -5,7 +5,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.ai.local import LocalDemoAIProvider
-from app.ai.gemini import AIProviderQuotaError
+from app.ai.gemini import (
+    AIProviderError,
+    AIProviderMalformedResponse,
+    AIProviderQuotaError,
+    AIProviderTimeout,
+)
 from app.domain.operations.routing import NO_STEP_FREE_ROUTE, RoutingService
 from app.domain.operations.state import OperationalStateService
 from app.domain.venue.enums import AssetStatus
@@ -47,15 +52,25 @@ def create_golden_reports(workflow):
     ]
 
 
-def test_guided_demo_uses_labelled_local_fallback_only_when_gemini_quota_is_exhausted():
+@pytest.mark.parametrize(
+    "provider_error",
+    [
+        AIProviderQuotaError("private quota detail"),
+        AIProviderTimeout("private timeout detail"),
+        AIProviderMalformedResponse("private malformed response detail"),
+        AIProviderError("private provider detail"),
+    ],
+    ids=["quota", "timeout", "malformed", "provider"],
+)
+def test_guided_demo_uses_labelled_local_fallback_when_gemini_is_unavailable(provider_error):
     class QuotaProvider(LocalDemoAIProvider):
         name = "GEMINI"
 
         def extract_report(self, *_args, **_kwargs):
-            raise AIProviderQuotaError("private quota detail")
+            raise provider_error
 
         def propose_plan(self, *_args, **_kwargs):
-            raise AIProviderQuotaError("private quota detail")
+            raise provider_error
 
     venue = VenueService().load_canonical_venue()
     state = OperationalStateService(venue)
@@ -72,7 +87,7 @@ def test_guided_demo_uses_labelled_local_fallback_only_when_gemini_quota_is_exha
         for text in GOLDEN_REPORTS
     ]
     assert all(report.extraction.provider == "LOCAL_DEMO_PROVIDER" for report in reports)
-    assert all(report.provenance == "GUIDED_DEMO_QUOTA_FALLBACK" for report in reports)
+    assert all(report.provenance == "GUIDED_DEMO_AI_FALLBACK" for report in reports)
 
     incident = workflow.create_incident(
         IncidentCreate(
@@ -81,6 +96,11 @@ def test_guided_demo_uses_labelled_local_fallback_only_when_gemini_quota_is_exha
         )
     )
     assert incident.current_plan.plan_source.value == "LOCAL_DETERMINISTIC"
+    assert any(
+        event.event_type == "PLAN_PROPOSED"
+        and event.actor == "LOCAL_DEMO_PROVIDER"
+        for event in incident.audit_events
+    )
     approved = workflow.approve_plan(
         incident.id, ApprovalRequest(approved_by="Evaluator Controller")
     )
@@ -95,6 +115,75 @@ def test_guided_demo_uses_labelled_local_fallback_only_when_gemini_quota_is_exha
     assert reassessed.impact.route_result.message == NO_STEP_FREE_ROUTE
     assert reassessed.proposed_revision is not None
     assert len(reassessed.proposed_revision.actions) == 4
+
+
+def test_guided_demo_relationship_failure_uses_labelled_local_fallback():
+    class RelationshipUnavailableProvider(LocalDemoAIProvider):
+        name = "GEMINI"
+
+        def assess_incident_match(self, *_args, **_kwargs):
+            raise AIProviderTimeout("private timeout detail")
+
+    venue = VenueService().load_canonical_venue()
+    workflow = WorkflowService(
+        venue,
+        OperationalStateService(venue),
+        RoutingService(venue),
+        RelationshipUnavailableProvider(),
+        guided_demo_fallback_provider=LocalDemoAIProvider(),
+    )
+
+    workflow.create_report(ReportCreate(raw_text=GOLDEN_REPORTS[0], source="GUIDED_DEMO"))
+    second = workflow.create_report(
+        ReportCreate(raw_text=GOLDEN_REPORTS[1], source="GUIDED_DEMO")
+    )
+
+    assert second.provenance == "GUIDED_DEMO_AI_FALLBACK"
+    assert second.match_candidates
+
+
+def test_manual_report_provider_failure_remains_fail_closed():
+    class UnavailableProvider(LocalDemoAIProvider):
+        name = "GEMINI"
+
+        def extract_report(self, *_args, **_kwargs):
+            raise AIProviderTimeout("private timeout detail")
+
+    venue = VenueService().load_canonical_venue()
+    workflow = WorkflowService(
+        venue,
+        OperationalStateService(venue),
+        RoutingService(venue),
+        UnavailableProvider(),
+        guided_demo_fallback_provider=LocalDemoAIProvider(),
+    )
+
+    with pytest.raises(AIProviderTimeout):
+        workflow.create_report(ReportCreate(raw_text=GOLDEN_REPORTS[0]))
+
+
+def test_guided_demo_api_returns_labelled_fallback_instead_of_503():
+    class UnavailableProvider(LocalDemoAIProvider):
+        name = "GEMINI"
+
+        def extract_report(self, *_args, **_kwargs):
+            raise AIProviderError("private upstream detail")
+
+    with TestClient(create_app()) as client:
+        client.app.state.workflow_service.ai_provider = UnavailableProvider()
+        response = client.post(
+            "/api/workflow/reports",
+            json={
+                "rawText": GOLDEN_REPORTS[0],
+                "source": "GUIDED_DEMO",
+                "synthetic": True,
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["provenance"] == "GUIDED_DEMO_AI_FALLBACK"
+        assert response.json()["extraction"]["provider"] == "LOCAL_DEMO_PROVIDER"
+        assert "private upstream detail" not in response.text
 
 
 def test_report_extraction_is_unverified_and_related_reports_are_suggested(workflow):

@@ -18,7 +18,7 @@ Three reports describe a stuck lift near Section 214, a blocked upper-west acces
 
 Open `http://localhost:3000`, complete or skip the first-visit tour, then select **Start Guided Demo**. Six focused steps call the real report, incident, routing, planning, approval, operational-state, and reassessment APIs. No frontend result is faked. The same capabilities remain available for manual evaluation under **Reports and evaluator intake**, **Venue and system details**, Tasks, Communications, and Audit.
 
-If Gemini returns an explicit quota error during the guided scenario, the backend alone switches that scenario to the deterministic, labelled `LOCAL_DEMO_PROVIDER`. The report provenance becomes `GUIDED_DEMO_QUOTA_FALLBACK`, the interface discloses the fallback, and all routing, validation, approval, task, communication, mutation, and reassessment APIs still run normally. Manual report intake remains fail-closed; API keys are never entered or stored in the browser.
+If Gemini is unavailable, over quota, times out, or returns malformed structured output during the guided scenario, the backend alone switches that scenario to the deterministic, labelled `LOCAL_DEMO_PROVIDER`. The report provenance becomes `GUIDED_DEMO_AI_FALLBACK`, the interface discloses the fallback, and all routing, validation, approval, task, communication, mutation, and reassessment APIs still run normally. Manual report intake remains fail-closed; API keys are never entered or stored in the browser.
 
 ## Architecture
 

@@ -335,7 +335,7 @@ export default function IncidentWorkflow({
         {demoMode && demoStep === 2 && (
           <div className="stage-content">
             <div className="stage-heading"><span>Step 2 of 6 · Incident intelligence</span><SignalBadge kind="ai">AI insight</SignalBadge><h3>AI suggests an incident relationship</h3><p>Evidence remains unverified until the controller confirms what belongs together.</p></div>
-            {reports.some((report) => report.provenance === "GUIDED_DEMO_QUOTA_FALLBACK") && <p className="fallback-notice" role="status">Gemini quota was unavailable, so the guided demo used the labelled local extraction fallback.</p>}
+            {reports.some((report) => ["GUIDED_DEMO_AI_FALLBACK", "GUIDED_DEMO_QUOTA_FALLBACK"].includes(report.provenance ?? "")) && <p className="fallback-notice" role="status">Gemini was unavailable, so the guided demo used the labelled local fallback.</p>}
             <div className="evidence-grid">
               {reports.map((report) => (
                 <article key={report.id}>

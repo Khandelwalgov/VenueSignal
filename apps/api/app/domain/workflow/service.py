@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from threading import RLock
 from uuid import uuid4
 
-from app.ai.gemini import AIProviderQuotaError
+from app.ai.gemini import AIProviderError
 from app.ai.provider import AIProvider
 from app.domain.operations.models import RouteConstraints, RouteQuery
 from app.domain.operations.routing import RoutingService
@@ -124,7 +124,7 @@ class WorkflowService:
         fallback_used = False
         try:
             extraction = provider.extract_report(request.raw_text, request.language, self.venue)
-        except AIProviderQuotaError:
+        except AIProviderError:
             if request.source != "GUIDED_DEMO" or self.guided_demo_fallback_provider is None:
                 raise
             provider = self.guided_demo_fallback_provider
@@ -167,7 +167,7 @@ class WorkflowService:
             candidate_report = max(stored_reports, key=relevance)
             try:
                 candidates.append(provider.assess_incident_match(extraction, candidate_report))
-            except AIProviderQuotaError:
+            except AIProviderError:
                 if request.source != "GUIDED_DEMO" or self.guided_demo_fallback_provider is None:
                     raise
                 candidates.append(
@@ -187,7 +187,7 @@ class WorkflowService:
             match_candidates=sorted(candidates, key=lambda item: item.score, reverse=True),
             fingerprint=fingerprint,
             provenance=(
-                "GUIDED_DEMO_QUOTA_FALLBACK"
+                "GUIDED_DEMO_AI_FALLBACK"
                 if fallback_used
                 else "GUIDED_DEMO"
                 if request.source == "GUIDED_DEMO"
@@ -311,7 +311,8 @@ class WorkflowService:
                 if self.guided_demo_fallback_provider is not None
                 and plan.plan_source == PlanSource.LOCAL_DETERMINISTIC
                 and any(
-                    report.provenance == "GUIDED_DEMO_QUOTA_FALLBACK"
+                    report.provenance
+                    in {"GUIDED_DEMO_AI_FALLBACK", "GUIDED_DEMO_QUOTA_FALLBACK"}
                     for report in reports
                 )
                 else self.ai_provider.name
@@ -503,7 +504,7 @@ class WorkflowService:
             proposed = provider.propose_plan(
                 verified_facts, unverified_claims, impact, self.venue
             )
-        except AIProviderQuotaError as error:
+        except AIProviderError as error:
             if (
                 allow_guided_fallback
                 and impact.route_result.found

@@ -204,7 +204,7 @@ describe("VenueSignal frontend experience", () => {
     const reports = [1, 2, 3].map((number) => ({
       id: `RPT-${number}`, rawText: `Synthetic report ${number}`, language: "en", source: "EVALUATOR_UI", synthetic: true,
       extraction: { category: "FACILITY_OUTAGE", summary: `Synthetic report ${number}`, candidateZoneIds: ["Z_L2_W"], candidateAssetIds: ["A_LIFT_2"], affectedGroups: [], observedSymptoms: [], urgencySuggestion: "HIGH", confidence: .86, unverifiedClaims: [`Synthetic report ${number}`], missingInformation: ["Controller verification"], clarificationQuestions: [], untrustedInstructionDetected: false, provider: "LOCAL_DEMO_PROVIDER" },
-      relatedReportIds: [], matchCandidates: [], provenance: "GUIDED_DEMO_QUOTA_FALLBACK", createdAt: "2026-07-15T00:00:00Z",
+      relatedReportIds: [], matchCandidates: [], provenance: "GUIDED_DEMO_AI_FALLBACK", createdAt: "2026-07-15T00:00:00Z",
     })) satisfies api.VenueReport[];
     const proposed = {
       id: "INC-1", reportIds: ["RPT-1", "RPT-2"], status: "PLAN_PROPOSED", verifiedFacts: ["Lift L2 is OUT_OF_SERVICE"], unverifiedClaims: reports.map((report) => report.rawText),
@@ -233,7 +233,7 @@ describe("VenueSignal frontend experience", () => {
     expect(await screen.findByText("Three reports arrive")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Analyse reports" }));
     expect(await screen.findByText("AI suggests an incident relationship")).toBeVisible();
-    expect(screen.getByText(/guided demo used the labelled local extraction fallback/i)).toBeVisible();
+    expect(screen.getByText(/guided demo used the labelled local fallback/i)).toBeVisible();
     expect(api.createReport).toHaveBeenCalledTimes(3);
     expect(api.createReport).toHaveBeenNthCalledWith(1, expect.any(String), true);
     expect(screen.getAllByText("Unverified evidence")).toHaveLength(4);

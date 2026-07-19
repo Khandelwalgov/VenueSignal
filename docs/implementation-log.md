@@ -277,3 +277,11 @@ This log records concise engineering decisions and verifiable results. It does n
 **Reset and shared state:** Added an ADC-backed operator script that previews and then explicitly clears persisted demo reports/incidents and restores canonical operational state. Production HTTP reset remains disabled. Operational services now reload repository state so separate Render instances observe Firestore changes and operator resets.
 
 **Validation:** 93 backend and 22 frontend tests passed. ESLint, TypeScript, Render production-setting validation, canonical venue resolution from the Render root directory, Blueprint/YAML parsing, shell syntax, and dry-run guards passed. The Render backend URL, secret file, and Vercel API URL remain deployment-time values.
+
+## 19 July 2026 — Guided-demo provider-failure continuity
+
+**Finding:** The production guided-demo request returned a generic Gemini provider failure rather than the quota-specific error, so the quota-only report fallback did not run and the HTTP endpoint returned 503.
+
+**Correction:** Guided-demo report extraction, relationship assessment, and route-available plan generation now use the labelled local provider for any classified Gemini provider, quota, timeout, or malformed-response failure. The boundary remains restricted to reports whose server request source is `GUIDED_DEMO`; ordinary/manual intake still fails closed. Persisted fallback reports use `GUIDED_DEMO_AI_FALLBACK`, while the frontend also recognizes the legacy quota provenance.
+
+**Validation:** 99 backend and 22 frontend tests passed. The backend suite now exercises quota, timeout, malformed response, generic provider failure, relationship-assessment failure, the exact HTTP 200 fallback contract, and manual fail-closed behavior. ESLint, TypeScript, and the Next.js production build passed.
