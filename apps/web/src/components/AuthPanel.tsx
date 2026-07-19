@@ -7,10 +7,33 @@ import { AUTH_MODE, firebaseConfigured, observeUser, signIn, signOut } from "@/l
 
 const DEMO_EMAIL = "admin@venuesignal.com";
 
-export default function AuthPanel({ onPrincipal }: { onPrincipal: (principal: Principal | null) => void }) {
+export interface PublicDemoCredentials {
+  email: string;
+  password: string;
+}
+
+export function publicDemoCredentialsFromEnvironment(): PublicDemoCredentials | null {
+  const email = process.env.NEXT_PUBLIC_DEMO_EMAIL;
+  const password = process.env.NEXT_PUBLIC_DEMO_PASSWORD;
+  return process.env.NEXT_PUBLIC_ENABLE_PUBLIC_DEMO_CREDENTIALS === "true"
+    && email
+    && password
+    ? { email, password }
+    : null;
+}
+
+const PUBLIC_DEMO_CREDENTIALS = publicDemoCredentialsFromEnvironment();
+
+export default function AuthPanel({
+  onPrincipal,
+  publicDemoCredentials = PUBLIC_DEMO_CREDENTIALS,
+}: {
+  onPrincipal: (principal: Principal | null) => void;
+  publicDemoCredentials?: PublicDemoCredentials | null;
+}) {
   const [principal, setPrincipal] = useState<Principal | null>(null);
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(publicDemoCredentials?.email ?? DEMO_EMAIL);
+  const [password, setPassword] = useState(publicDemoCredentials?.password ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -62,6 +85,14 @@ export default function AuthPanel({ onPrincipal }: { onPrincipal: (principal: Pr
     }
   }
 
+  async function copyCredential(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      setError("Copy failed. Select the credential manually.");
+    }
+  }
+
   if (principal) {
     return (
       <div className="identity-card" aria-label="Verified application identity">
@@ -90,11 +121,27 @@ export default function AuthPanel({ onPrincipal }: { onPrincipal: (principal: Pr
           <div><h3 id="demo-access-title">Demo Controller Access</h3><p>Use the dedicated demo controller account to explore the complete golden scenario.</p></div>
         </div>
 
-        <div className="demo-account-summary">
-          <span>Demo account email</span>
-          <strong>{DEMO_EMAIL}</strong>
-          <small>Password provided in submission instructions.</small>
-        </div>
+        {publicDemoCredentials ? (
+          <div className="demo-account-summary public-demo-credentials">
+            <span>Public hackathon demo</span>
+            <small>These credentials provide access only to the synthetic VenueSignal demonstration environment.</small>
+            <dl>
+              <div><dt>Email</dt><dd>{publicDemoCredentials.email}</dd></div>
+              <div><dt>Password</dt><dd>{publicDemoCredentials.password}</dd></div>
+            </dl>
+            <div className="public-demo-actions">
+              <button type="button" onClick={() => void copyCredential(publicDemoCredentials.email)}>Copy Email</button>
+              <button type="button" onClick={() => void copyCredential(publicDemoCredentials.password)}>Copy Password</button>
+            </div>
+            <small>Public demo credentials are intentionally shared for hackathon evaluation. All venue and operational data is synthetic.</small>
+          </div>
+        ) : (
+          <div className="demo-account-summary">
+            <span>Demo account email</span>
+            <strong>{DEMO_EMAIL}</strong>
+            <small>Password provided in submission instructions.</small>
+          </div>
+        )}
 
         {!firebaseConfigured && <span role="alert">Demo sign-in is temporarily unavailable because authentication configuration is incomplete.</span>}
         <label htmlFor="controller-email">Email</label>

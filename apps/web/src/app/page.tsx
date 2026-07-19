@@ -7,45 +7,34 @@ import DetailsPanel from "@/components/DetailsPanel";
 import IncidentWorkflow, { WorkflowSummary } from "@/components/IncidentWorkflow";
 import MapDisplay from "@/components/MapDisplay";
 import Tutorial, { TUTORIAL_STORAGE_KEY } from "@/components/Tutorial";
-import {
-  AccessibilitySummary,
-  AssetStatus,
-  fetchAccessibilitySummary,
-  fetchGoldenStepFreeRoute,
-  fetchLevel,
-  fetchOperationalState,
-  fetchValidation,
-  fetchVenue,
-  LevelData,
-  OperationalState,
-  Principal,
-  resetOperationalState,
-  RouteResult,
-  setAssetStatus,
-  ValidationResult,
-  VenueMetadata,
-} from "@/lib/api";
-
-const VENUE_ID = "unity-stadium";
+import { useVenueOperations } from "@/hooks/useVenueOperations";
+import { Principal } from "@/lib/api";
 
 export default function Home() {
-  const [venue, setVenue] = useState<VenueMetadata | null>(null);
-  const [levelData, setLevelData] = useState<LevelData | null>(null);
-  const [validation, setValidation] = useState<ValidationResult | null>(null);
-  const [accessibility, setAccessibility] = useState<AccessibilitySummary | null>(null);
-  const [operationalState, setOperationalState] = useState<OperationalState | null>(null);
-  const [route, setRoute] = useState<RouteResult | null>(null);
-  const [activeLevelId, setActiveLevelId] = useState("L0");
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [assetType, setAssetType] = useState("ALL");
   const [showGraphDetails, setShowGraphDetails] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [mutating, setMutating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [principal, setPrincipal] = useState<Principal | null>(null);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [startDemoSignal, setStartDemoSignal] = useState(0);
   const [workflowSummary, setWorkflowSummary] = useState<WorkflowSummary>({ incident: null, reports: 0, tasks: 0, communications: 0 });
+  const {
+    activeLevelId,
+    applyAssetOverride,
+    currentAccessibilityChecks,
+    effectiveLevelData,
+    error,
+    levelData,
+    loading,
+    mutating,
+    operationalState,
+    refreshOperationalView,
+    resetScenario,
+    route,
+    setActiveLevelId,
+    validation,
+    venue,
+  } = useVenueOperations(principal);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -56,40 +45,6 @@ export default function Home() {
     return () => window.clearTimeout(timeout);
   }, []);
 
-  useEffect(() => {
-    if (!principal) return;
-    let cancelled = false;
-    async function loadWorkspace() {
-      setLoading(true);
-      try {
-        const [venueResponse, levelResponse, validationResponse, accessibilityResponse, stateResponse, routeResponse] =
-          await Promise.all([
-            fetchVenue(VENUE_ID),
-            fetchLevel(VENUE_ID, activeLevelId),
-            fetchValidation(VENUE_ID),
-            fetchAccessibilitySummary(VENUE_ID),
-            fetchOperationalState(),
-            fetchGoldenStepFreeRoute(),
-          ]);
-        if (cancelled) return;
-        setVenue(venueResponse);
-        setLevelData(levelResponse);
-        setValidation(validationResponse);
-        setAccessibility(accessibilityResponse);
-        setOperationalState(stateResponse);
-        setRoute(routeResponse);
-        setError(null);
-      } catch (requestError: unknown) {
-        if (cancelled) return;
-        setError(requestError instanceof Error ? requestError.message : "Venue data is unavailable.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadWorkspace();
-    return () => { cancelled = true; };
-  }, [activeLevelId, principal]);
-
   const readOnly = principal?.role !== "CONTROLLER";
   const incident = workflowSummary.incident;
   const awaitingApproval = Boolean(incident && (incident.proposedRevision || (!incident.currentPlan.approvedAt && !incident.tasks.length)));
@@ -99,29 +54,10 @@ export default function Home() {
     [levelData],
   );
 
-  const effectiveLevelData = useMemo(() => {
-    if (!levelData || !operationalState) return levelData;
-    return {
-      ...levelData,
-      assets: levelData.assets.map((asset) => ({ ...asset, status: operationalState.assetStatusOverrides[asset.id] ?? asset.status })),
-      edges: levelData.edges.map((edge) => ({
-        ...edge,
-        status: operationalState.edgeStatusOverrides[edge.id] ?? edge.status,
-        currentCrowdPercent: operationalState.edgeCrowdOverrides[edge.id] ?? edge.currentCrowdPercent,
-      })),
-    };
-  }, [levelData, operationalState]);
-
   const visibleAssets = useMemo(
     () => effectiveLevelData?.assets.filter((asset) => assetType === "ALL" || asset.type === assetType) ?? [],
     [assetType, effectiveLevelData],
   );
-
-  const currentAccessibilityChecks = useMemo(() => {
-    if (!levelData || !accessibility) return [];
-    const nodeIds = new Set(levelData.nodes.map((node) => node.id));
-    return accessibility.checks.filter((check) => nodeIds.has(check.destinationNodeId));
-  }, [accessibility, levelData]);
 
   const updateWorkflowSummary = useCallback((summary: WorkflowSummary) => setWorkflowSummary(summary), []);
 
@@ -134,38 +70,6 @@ export default function Home() {
   function startGuidedDemo() {
     setTutorialOpen(false);
     setStartDemoSignal((current) => current + 1);
-  }
-
-  async function applyAssetOverride(assetId: string, status: AssetStatus) {
-    setMutating(true);
-    try {
-      const state = await setAssetStatus(assetId, status);
-      const nextRoute = await fetchGoldenStepFreeRoute();
-      setOperationalState(state);
-      setRoute(nextRoute);
-      setError(null);
-    } catch (mutationError: unknown) {
-      setError(mutationError instanceof Error ? mutationError.message : "Operational update failed.");
-    } finally { setMutating(false); }
-  }
-
-  async function resetScenario() {
-    setMutating(true);
-    try {
-      const state = await resetOperationalState();
-      const nextRoute = await fetchGoldenStepFreeRoute();
-      setOperationalState(state);
-      setRoute(nextRoute);
-      setError(null);
-    } catch (mutationError: unknown) {
-      setError(mutationError instanceof Error ? mutationError.message : "Operational reset failed.");
-    } finally { setMutating(false); }
-  }
-
-  async function refreshOperationalView() {
-    const [state, nextRoute] = await Promise.all([fetchOperationalState(), fetchGoldenStepFreeRoute()]);
-    setOperationalState(state);
-    setRoute(nextRoute);
   }
 
   return (

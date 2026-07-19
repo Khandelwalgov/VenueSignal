@@ -315,12 +315,12 @@ Canonical topology remains version-controlled JSON and is never destructively mo
 
 ### 12.5 Deployment
 
-- Frontend: Vercel or Firebase Hosting.
-- Backend: non-root Cloud Run container.
-- Build/deploy: Cloud Build and Artifact Registry.
-- Secrets: Secret Manager.
+- Frontend: Vercel.
+- Backend: Render native Python service.
+- Configuration: Render Blueprint plus Vercel Production environment variables.
+- Secrets: Render environment secrets and a Firebase Admin secret file.
 - Auth: Firebase Authentication.
-- Data: Firestore and emulator configuration.
+- Data: Firestore.
 
 ## 13. API surface
 
@@ -344,8 +344,7 @@ All `/api` routes require identity. Mutation routes require controller role. Hea
 - security headers disable framing, MIME sniffing, browser sensors, and uncontrolled content;
 - production OpenAPI UI is disabled;
 - direct Firestore client access is denied;
-- Cloud Run uses a non-root user;
-- secrets are injected through Secret Manager or server environment;
+- backend secrets are injected through Render environment values or secret files;
 - prompt-like report text is flagged and isolated;
 - plan output is schema- and domain-validated;
 - mutable actions and decisions are audited;
@@ -405,14 +404,14 @@ Implemented and tested locally:
 - controller/viewer authorization;
 - rate limiting, security headers, body/upload bounds, idempotency, and audit;
 - Firebase/Firestore emulator configuration;
-- non-root Cloud Run container and Cloud Build definition;
+- Render Blueprint and production environment examples;
 - controller workspace, upload, ledgers, verified identity, and audit UI.
 
 Credential-dependent validation still required outside this repository:
 
 - a real Firebase project and custom role claims;
 - Application Default Credentials and Firestore database;
-- Secret Manager entries, Artifact Registry repository, Cloud Run service, frontend hosting project, and public domains;
+- Render secret values, Firebase Admin secret file, Vercel project, and public domains;
 - final venue-operator, security, privacy, and assistive-technology review.
 
 These are deployment prerequisites, not hidden demo implementations.
@@ -431,7 +430,7 @@ A subsequent fully hardened rerun reached Gemini quota during initial plan gener
 6. Gemini extraction and plan output pass schema/domain validation with live credentials.
 7. Secret values are absent from source, client bundles, logs, and error responses.
 8. Production CORS contains only deployed frontend origins.
-9. Cloud Run readiness succeeds and production OpenAPI is disabled.
+9. Render health/readiness succeeds and production OpenAPI is disabled.
 10. Keyboard, screen reader, 200% zoom, reduced motion, and mobile/tablet checks pass.
 11. Operational owner approves the no-route containment language.
 12. Privacy, retention, incident response, monitoring, backup, and rollback policies are assigned.
@@ -441,21 +440,21 @@ A subsequent fully hardened rerun reached Gemini quota during initial plan gener
 The completed repository was verified on 18 July 2026 with:
 
 - 99 backend tests passing in Python 3.12;
-- 22 frontend interaction tests passing;
+- 24 frontend interaction tests passing;
 - zero ESLint warnings or errors;
 - successful TypeScript static checking;
 - successful Next.js 16 production compilation and static generation;
 - successful `pip check` and production Google SDK import checks;
 - zero known Python and npm production dependency vulnerabilities at audit time;
-- valid Firebase/Firestore JSON and Cloud Build/GitHub Actions YAML;
-- clean whitespace validation and a 1.17 MB source repository, well below the contest limit;
+- valid Firebase/Firestore JSON, Render Blueprint YAML, and GitHub Actions YAML;
+- clean whitespace validation and a 1.46 MB source repository, well below the contest limit;
 - a real-browser live-Gemini golden flow proving report intake, bounded related-report reasoning, controller confirmation, the 530 m W3 fallback, approval-gated creation of four tasks and three translations, W3 closure, explicit no-route state, `UNSAFE` reassessment, `NO_VERIFIED_ROUTE` rejection, exactly one valid repair, and revision approval;
 - browser regression checks proving the server identity contract and duplicate-approval UI guard;
 - 1280 px, 768 px, and 390 px layouts with document width equal to viewport width and no horizontal overflow;
 - local development CSP compatibility verified after correcting a development-only React runtime block; the production CSP remains strict;
 - final frontend headers including CSP, deny-frame, no-sniff, no-referrer, permissions policy, opener policy, and no framework disclosure.
 
-The container definition could not be locally built because Docker is not installed in the evaluation workspace. CI and Cloud Build definitions perform the production dependency install/build path when run in their configured environments. Live Firebase, Firestore, IAM, Secret Manager, Cloud Run, and hosted-domain verification still require the external project resources listed above. Live Gemini and the complete repaired containment path are verified.
+The final Render native-Python settings and production dependency path were validated locally. Live Firebase, Firestore, Render secrets, and hosted-domain verification still require the external project resources listed above. Live Gemini and the complete repaired containment path are verified.
 
 ## 22. Future extensions after launch
 

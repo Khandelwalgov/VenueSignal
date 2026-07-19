@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 from datetime import datetime, timezone
 from threading import RLock
@@ -8,7 +9,6 @@ from uuid import uuid4
 
 from app.ai.gemini import AIProviderError
 from app.ai.provider import AIProvider
-from app.domain.operations.models import RouteConstraints, RouteQuery
 from app.domain.operations.routing import RoutingService
 from app.domain.operations.state import OperationalStateService
 from app.domain.venue.enums import AssetStatus
@@ -38,16 +38,11 @@ from app.domain.workflow.models import (
     TaskUpdate,
 )
 from app.domain.workflow.repository import InMemoryWorkflowRepository, WorkflowRepository
+from app.domain.workflow.impact import ImpactAnalyzer
+from app.domain.workflow.plan_validation import PlanValidator
 
 
-ALLOWED_ACTION_TYPES = {
-    "INSPECT_ASSET",
-    "DISPATCH_ACCESSIBILITY_TEAM",
-    "STAFF_VERIFIED_ROUTE",
-    "ESTABLISH_WAITING_POINT",
-    "VERIFY_ROUTE_STATUS",
-}
-KNOWN_TEAMS = {"MAINTENANCE", "ACCESSIBILITY_TEAM", "VENUE_OPERATIONS"}
+logger = logging.getLogger("venuesignal.workflow")
 TASK_TRANSITIONS = {
     TaskStatus.CREATED: {TaskStatus.ASSIGNED, TaskStatus.CANCELLED},
     TaskStatus.ASSIGNED: {TaskStatus.ACKNOWLEDGED, TaskStatus.BLOCKED, TaskStatus.CANCELLED},
@@ -92,6 +87,10 @@ class WorkflowService:
         self.ai_provider = ai_provider
         self.repository = repository or InMemoryWorkflowRepository()
         self.guided_demo_fallback_provider = guided_demo_fallback_provider
+        self.impact_analyzer = ImpactAnalyzer(
+            venue, state_service, routing_service
+        )
+        self.plan_validator = PlanValidator(venue, state_service)
         self._lock = RLock()
 
     def list_reports(self) -> list[Report]:
@@ -222,54 +221,7 @@ class WorkflowService:
         )
 
     def _analyse_impact(self, asset_id: str) -> ImpactAnalysis:
-        asset = next(asset for asset in self.venue.assets if asset.id == asset_id)
-        state = self.state_service.snapshot()
-        route = self.routing_service.find_route(
-            RouteQuery(
-                start_node_id="N_L0_W_ACC_ENT",
-                destination_node_id="N_L2_SEC_209_218",
-                constraints=RouteConstraints(step_free=True),
-            ),
-            state,
-        )
-        served_nodes = set(asset.served_node_ids)
-        served_edges = set(asset.served_edge_ids)
-        dependent_edges = {
-            edge.id for edge in self.venue.edges if asset_id in edge.dependent_asset_ids
-        }
-        zones = sorted(
-            {
-                node.zone_id
-                for node in self.venue.nodes
-                if node.id in served_nodes and node.zone_id
-            }
-        )
-        inaccessible = [] if route.found else ["N_L2_SEC_209_218"]
-        consequences = ["Normal step-free access to Sections 209–218 is invalidated"]
-        consequences.append(
-            "A longer verified Corridor W3 fallback remains available"
-            if route.found and "E_W3_FALLBACK_RAMP" in route.edge_ids
-            else "No verified safe step-free route remains"
-            if not route.found
-            else "The normal step-free route remains available"
-        )
-        crowd_concerns = [
-            f"{edge.id} is at {state.edge_crowd_overrides.get(edge.id, edge.current_crowd_percent):.0f}% synthetic crowd"
-            for edge in self.venue.edges
-            if state.edge_crowd_overrides.get(edge.id, edge.current_crowd_percent) >= 80
-        ]
-        return ImpactAnalysis(
-            affected_node_ids=sorted(served_nodes),
-            affected_edge_ids=sorted(served_edges | dependent_edges),
-            affected_zone_ids=zones,
-            inaccessible_destination_ids=inaccessible,
-            accessibility_consequences=consequences,
-            route_result=route,
-            rejected_route_reasons=route.rejected_reasons,
-            crowd_capacity_concerns=crowd_concerns,
-            required_capabilities=["ACCESSIBILITY_TEAM", "VENUE_OPERATIONS", "MAINTENANCE"],
-            context_version=state.context_version,
-        )
+        return self.impact_analyzer.analyze(asset_id)
 
     @staticmethod
     def _contradictions(reports: list[Report]) -> list[str]:
@@ -347,50 +299,7 @@ class WorkflowService:
     def _plan_validation_errors(
         self, plan: ResponsePlan, impact: ImpactAnalysis
     ) -> list[PlanValidationError]:
-        errors: list[PlanValidationError] = []
-        state = self.state_service.snapshot()
-        if plan.context_version != state.context_version:
-            errors.append(
-                PlanValidationError(
-                    code="STALE_CONTEXT_VERSION",
-                    message=f"Plan context v{plan.context_version} is stale; current context is v{state.context_version}",
-                )
-            )
-        if plan.approved_at is not None or plan.approved_by is not None:
-            errors.append(
-                PlanValidationError(
-                    code="MODEL_SELF_APPROVAL",
-                    message="AI proposals cannot mark themselves approved",
-                )
-            )
-        if not plan.actions:
-            errors.append(
-                PlanValidationError(code="EMPTY_PLAN", message="A response plan must contain at least one action")
-            )
-        known_locations = {
-            item.id
-            for collection in (self.venue.assets, self.venue.nodes, self.venue.zones)
-            for item in collection
-        }
-        for index, action in enumerate(plan.actions):
-            if action.action_type not in ALLOWED_ACTION_TYPES:
-                errors.append(PlanValidationError(code="DISALLOWED_ACTION_TYPE", message=f"Disallowed action type: {action.action_type}", action_index=index))
-            if action.assigned_team not in KNOWN_TEAMS:
-                errors.append(PlanValidationError(code="UNKNOWN_TEAM", message=f"Unknown team: {action.assigned_team}", action_index=index))
-            if action.location_id not in known_locations:
-                errors.append(PlanValidationError(code="UNKNOWN_LOCATION", message=f"Unknown action location: {action.location_id}", action_index=index))
-            if any(dependency < 0 or dependency >= index for dependency in action.depends_on_action_indexes):
-                errors.append(PlanValidationError(code="INVALID_ACTION_DEPENDENCY", message="Action dependencies must reference an earlier action index", action_index=index))
-            if action.action_type == "STAFF_VERIFIED_ROUTE" and not impact.route_result.found:
-                errors.append(PlanValidationError(code="NO_VERIFIED_ROUTE", message="A route action cannot be approved when no verified route exists", action_index=index))
-        if not impact.route_result.found and plan.validity != PlanValidity.AWAITING_VERIFICATION:
-            errors.append(
-                PlanValidationError(
-                    code="INVALID_NO_ROUTE_VALIDITY",
-                    message="A no-route plan must remain AWAITING_VERIFICATION",
-                )
-            )
-        return errors
+        return self.plan_validator.validate(plan, impact)
 
     def _deterministic_containment_plan(self, impact: ImpactAnalysis) -> ResponsePlan:
         no_route = not impact.route_result.found
@@ -482,7 +391,10 @@ class WorkflowService:
             record.repair_validation_errors = repair_errors
             if not repair_errors:
                 return repaired, record
+        except AIProviderError as error:
+            record.repair_error_category = type(error).__name__
         except Exception as error:
+            logger.exception("Unexpected plan repair failure; using safe containment")
             record.repair_error_category = type(error).__name__
 
         fallback = self._deterministic_containment_plan(impact)
@@ -522,6 +434,9 @@ class WorkflowService:
                     occurred_at=_now(),
                 )
         except Exception as error:
+            logger.exception(
+                "Unexpected plan generation failure; using safe containment"
+            )
             fallback = self._deterministic_containment_plan(impact)
             return fallback, PlanRecoveryRecord(
                 repair_error_category=type(error).__name__,
@@ -625,7 +540,16 @@ class WorkflowService:
             validity = PlanValidity.VALID if impact.route_result.found else PlanValidity.UNSAFE
             try:
                 explanation = self.ai_provider.explain_reassessment(old_version, impact)
+            except AIProviderError:
+                explanation = (
+                    f"Context changed from v{old_version} to v{impact.context_version}. "
+                    "Deterministic route validation found no verified safe step-free route; "
+                    "the approved plan is unsafe and human review is required."
+                )
             except Exception:
+                logger.exception(
+                    "Unexpected reassessment explanation failure; using deterministic explanation"
+                )
                 explanation = (
                     f"Context changed from v{old_version} to v{impact.context_version}. "
                     "Deterministic route validation found no verified safe step-free route; "

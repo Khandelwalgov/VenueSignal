@@ -9,4 +9,4 @@
 - Firestore tasks, communications, and audit events are embedded in incident documents for the current contest scale; high-volume deployments may split subcollections and add transactions/indexes.
 - The application does not process real personal data in the demo. Production privacy, retention, deletion, residency, monitoring, backup, and incident-response policies remain organizational obligations.
 - The deterministic containment plan is deliberately specific to Unity Stadium's Lift L2/Corridor W3 no-route scenario. It does not claim generalized emergency planning or certified egress guidance.
-- Docker was unavailable in this workspace, so the container was inspected but not built locally. Firebase Auth, Firestore/ADC, Secret Manager, Cloud Run, and hosted-domain behavior require live project verification.
+- Firebase Auth, Firestore credentials, Render secrets, and final hosted-domain behavior require live project verification.

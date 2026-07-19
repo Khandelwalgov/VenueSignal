@@ -73,6 +73,12 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
 .demo-account-summary span { color: var(--muted); font-size: .62rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 .demo-account-summary strong { color: var(--brand); font-size: .85rem; }
 .demo-account-summary small { color: var(--muted); font-size: .68rem; }
+.public-demo-credentials dl { display: grid; gap: 6px; margin: 7px 0; }
+.public-demo-credentials dl div { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 8px; }
+.public-demo-credentials dt { color: var(--muted); font-size: .66rem; font-weight: 800; }
+.public-demo-credentials dd { margin: 0; overflow-wrap: anywhere; color: var(--ink); font-size: .72rem; }
+.public-demo-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.public-demo-actions button { padding: 6px 8px; color: var(--brand); border: 1px solid #a8beb5; border-radius: 6px; background: white; cursor: pointer; font-size: .62rem; font-weight: 800; }
 .sign-in-form label { margin-top: 3px; color: var(--ink); font-size: .7rem; font-weight: 800; }
 .sign-in-form input { width: 100%; min-height: 42px; padding: 9px 11px; color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px; background: white; }
 .sign-in-form .primary-button { width: 100%; min-height: 43px; margin-top: 6px; }

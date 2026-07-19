@@ -24,4 +24,4 @@
 
 ## Production obligations
 
-Deployers must create Firebase users and custom claims, configure Secret Manager and ADC, restrict CORS to the real frontend, set conservative rate limits, enable Cloud logging/alerting, define data retention and deletion, review service-account IAM, test backup/restore, and complete penetration and privacy reviews. Cloud Run is publicly reachable at the transport layer so browser Firebase tokens can reach the API; application middleware remains the authorization boundary.
+Deployers must create Firebase users and custom claims, configure the Render Firebase Admin secret file, restrict CORS to the real Vercel frontend, set conservative rate limits, configure logging/alerting, define data retention and deletion, review service-account IAM, test backup/restore, and complete penetration and privacy reviews. Render is publicly reachable at the transport layer so browser Firebase tokens can reach the API; application middleware remains the authorization boundary.

@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import AuthPanel from "./AuthPanel";
+import AuthPanel, { publicDemoCredentialsFromEnvironment } from "./AuthPanel";
 
 const mocks = vi.hoisted(() => ({
   fetchPrincipal: vi.fn(),
@@ -29,10 +29,27 @@ const controller = {
 
 describe("Demo Controller access", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
     mocks.observeUser.mockReturnValue(() => undefined);
     mocks.signIn.mockResolvedValue({});
     mocks.fetchPrincipal.mockResolvedValue(controller);
+  });
+
+  it("reads public demo credentials only when every environment value is enabled", () => {
+    vi.stubEnv("NEXT_PUBLIC_ENABLE_PUBLIC_DEMO_CREDENTIALS", "false");
+    vi.stubEnv("NEXT_PUBLIC_DEMO_EMAIL", "demo@example.test");
+    vi.stubEnv("NEXT_PUBLIC_DEMO_PASSWORD", "public-demo-password");
+    expect(publicDemoCredentialsFromEnvironment()).toBeNull();
+
+    vi.stubEnv("NEXT_PUBLIC_ENABLE_PUBLIC_DEMO_CREDENTIALS", "true");
+    expect(publicDemoCredentialsFromEnvironment()).toEqual({
+      email: "demo@example.test",
+      password: "public-demo-password",
+    });
+
+    vi.stubEnv("NEXT_PUBLIC_DEMO_PASSWORD", "");
+    expect(publicDemoCredentialsFromEnvironment()).toBeNull();
   });
 
   it("communicates the product purpose and safe demo-account instructions", () => {
@@ -47,13 +64,51 @@ describe("Demo Controller access", () => {
   });
 
   it("prefills only the demo email and preserves password-manager fields", () => {
-    render(<AuthPanel onPrincipal={vi.fn()} />);
+    render(<AuthPanel onPrincipal={vi.fn()} publicDemoCredentials={null} />);
 
     expect(screen.getByLabelText("Email")).toHaveValue("admin@venuesignal.com");
     expect(screen.getByLabelText("Email")).toHaveAttribute("autocomplete", "username");
     expect(screen.getByLabelText("Password")).toHaveValue("");
     expect(screen.getByLabelText("Password")).toHaveAttribute("type", "password");
     expect(screen.getByLabelText("Password")).toHaveAttribute("autocomplete", "current-password");
+    expect(screen.queryByText(/public hackathon demo/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("public-demo-password")).not.toBeInTheDocument();
+  });
+
+  it("shows, prefills, and copies environment-gated public demo credentials without bypassing Firebase", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText");
+    const onPrincipal = vi.fn();
+    render(
+      <AuthPanel
+        onPrincipal={onPrincipal}
+        publicDemoCredentials={{
+          email: "demo@example.test",
+          password: "public-demo-password",
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/public hackathon demo/i)).toBeVisible();
+    expect(screen.getByText("demo@example.test")).toBeVisible();
+    expect(screen.getByText("public-demo-password")).toBeVisible();
+    expect(screen.getByLabelText("Email")).toHaveValue("demo@example.test");
+    expect(screen.getByLabelText("Password")).toHaveValue("public-demo-password");
+
+    await user.click(screen.getByRole("button", { name: "Copy Email" }));
+    await user.click(screen.getByRole("button", { name: "Copy Password" }));
+    expect(writeText).toHaveBeenNthCalledWith(1, "demo@example.test");
+    expect(writeText).toHaveBeenNthCalledWith(2, "public-demo-password");
+
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => {
+      expect(mocks.signIn).toHaveBeenCalledWith(
+        "demo@example.test",
+        "public-demo-password",
+      );
+    });
+    await waitFor(() => expect(mocks.fetchPrincipal).toHaveBeenCalledOnce());
+    expect(onPrincipal).toHaveBeenCalledWith(controller);
   });
 
   it("submits with Enter, verifies the server principal, and shows the controller landing identity", async () => {

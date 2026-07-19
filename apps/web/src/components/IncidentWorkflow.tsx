@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   approveIncident,
   AuditEvent,
   Communication,
+  CommunicationStatus,
   createIncident,
   createReport,
   fetchAudit,
@@ -18,18 +19,34 @@ import {
   ImportPreview,
   reassessIncident,
   setAssetStatus,
+  TaskStatus,
   VenueReport,
   updateCommunication,
   updateIncidentStatus,
   updateTask,
   WorkflowTask,
 } from "@/lib/api";
+import { useGuidedDemo } from "@/hooks/useGuidedDemo";
 
 const GOLDEN_REPORTS = [
   "Lift near Section 214 is stuck again. Two wheelchair users are waiting.",
   "Upper west accessible path is blocked, sending people toward Corridor W3.",
   "Crowd building near the west stairs after halftime.",
 ];
+
+const NEXT_TASK_STATUS: Partial<Record<TaskStatus, TaskStatus>> = {
+  CREATED: "ASSIGNED",
+  ASSIGNED: "ACKNOWLEDGED",
+  ACKNOWLEDGED: "IN_PROGRESS",
+  IN_PROGRESS: "COMPLETED",
+};
+const NEXT_COMMUNICATION_STATUS: Partial<
+  Record<CommunicationStatus, CommunicationStatus>
+> = {
+  DRAFT: "UNDER_REVIEW",
+  UNDER_REVIEW: "APPROVED",
+  APPROVED: "PUBLISHED_SIMULATED",
+};
 
 export interface WorkflowSummary {
   incident: Incident | null;
@@ -79,13 +96,21 @@ export default function IncidentWorkflow({
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
-  const [demoMode, setDemoMode] = useState(false);
-  const [demoStep, setDemoStep] = useState(1);
-  const [containmentReviewOpen, setContainmentReviewOpen] = useState(false);
   const [communicationLanguage, setCommunicationLanguage] = useState("en");
   const actionInFlight = useRef(false);
   const submittedApprovals = useRef(new Set<string>());
-  const handledDemoSignal = useRef(0);
+  const {
+    containmentReviewOpen,
+    demoMode,
+    demoStep,
+    setContainmentReviewOpen,
+    setDemoMode,
+    setDemoStep,
+  } = useGuidedDemo({
+    incident,
+    reportCount: reports.length,
+    startDemoSignal,
+  });
 
   async function refreshQueues() {
     const [storedReports, incidents, storedTasks, storedCommunications, events] = await Promise.all([
@@ -106,26 +131,6 @@ export default function IncidentWorkflow({
   useEffect(() => {
     onSummaryChange?.({ incident, reports: reports.length, tasks: tasks.length, communications: communications.length });
   }, [communications.length, incident, onSummaryChange, reports.length, tasks.length]);
-
-  const startGuidedDemo = useCallback(() => {
-    setDemoMode(true);
-    setContainmentReviewOpen(false);
-    if (incident?.reassessment || incident?.proposedRevision) setDemoStep(6);
-    else if (incident?.tasks.length) setDemoStep(5);
-    else if (incident) setDemoStep(3);
-    else if (reports.length >= 3) setDemoStep(2);
-    else setDemoStep(1);
-    window.requestAnimationFrame(() => {
-      const workspace = document.getElementById("incidents");
-      if (typeof workspace?.scrollIntoView === "function") workspace.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }, [incident, reports.length]);
-
-  useEffect(() => {
-    if (startDemoSignal <= handledDemoSignal.current) return;
-    handledDemoSignal.current = startDemoSignal;
-    startGuidedDemo();
-  }, [startDemoSignal, startGuidedDemo]);
 
   async function run(action: () => Promise<void>): Promise<boolean> {
     if (actionInFlight.current) return false;
@@ -211,8 +216,8 @@ export default function IncidentWorkflow({
     });
   }
 
-  function nextTaskStatus(status: string): string | null {
-    return ({ CREATED: "ASSIGNED", ASSIGNED: "ACKNOWLEDGED", ACKNOWLEDGED: "IN_PROGRESS", IN_PROGRESS: "COMPLETED" } as Record<string, string>)[status] ?? null;
+  function nextTaskStatus(status: TaskStatus): TaskStatus | null {
+    return NEXT_TASK_STATUS[status] ?? null;
   }
 
   async function advanceTask(task: WorkflowTask) {
@@ -232,8 +237,10 @@ export default function IncidentWorkflow({
     });
   }
 
-  function nextCommunicationStatus(status: string): string | null {
-    return ({ DRAFT: "UNDER_REVIEW", UNDER_REVIEW: "APPROVED", APPROVED: "PUBLISHED_SIMULATED" } as Record<string, string>)[status] ?? null;
+  function nextCommunicationStatus(
+    status: CommunicationStatus,
+  ): CommunicationStatus | null {
+    return NEXT_COMMUNICATION_STATUS[status] ?? null;
   }
 
   async function advanceCommunication(item: Communication) {

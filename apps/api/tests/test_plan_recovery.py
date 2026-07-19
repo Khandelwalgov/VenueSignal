@@ -14,6 +14,7 @@ from app.domain.operations.routing import RoutingService
 from app.domain.operations.state import OperationalStateService
 from app.domain.venue.enums import AssetStatus
 from app.domain.venue.service import VenueService
+from app.domain.workflow.impact import ImpactAnalyzer
 from app.domain.workflow.models import (
     ApprovalRequest,
     IncidentCreate,
@@ -22,6 +23,7 @@ from app.domain.workflow.models import (
     PlanValidity,
     ReportCreate,
 )
+from app.domain.workflow.plan_validation import PlanValidator
 from app.domain.workflow.service import WorkflowService
 
 
@@ -221,7 +223,9 @@ def test_model_invented_identifiers_teams_and_actions_are_structured_errors():
     provider = ScriptedGeminiProvider()
     workflow = build_workflow(provider)
     workflow.state_service.set_asset_status("A_CORRIDOR_W3", AssetStatus.OUT_OF_SERVICE)
-    impact = workflow._analyse_impact("A_LIFT_2")
+    impact = ImpactAnalyzer(
+        workflow.venue, workflow.state_service, workflow.routing_service
+    ).analyze("A_LIFT_2")
     plan = provider.local.propose_plan([], [], impact, workflow.venue)
     plan.actions.extend(
         [
@@ -242,7 +246,12 @@ def test_model_invented_identifiers_teams_and_actions_are_structured_errors():
         ]
     )
 
-    codes = {error.code for error in workflow._plan_validation_errors(plan, impact)}
+    codes = {
+        error.code
+        for error in PlanValidator(
+            workflow.venue, workflow.state_service
+        ).validate(plan, impact)
+    }
     assert {"DISALLOWED_ACTION_TYPE", "UNKNOWN_TEAM", "UNKNOWN_LOCATION", "NO_VERIFIED_ROUTE"} <= codes
 
 

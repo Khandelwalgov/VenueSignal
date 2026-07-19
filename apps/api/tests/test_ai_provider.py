@@ -13,8 +13,8 @@ from app.domain.operations.routing import RoutingService
 from app.domain.operations.state import OperationalStateService
 from app.domain.venue.enums import AssetStatus
 from app.domain.venue.service import VenueService
+from app.domain.workflow.impact import ImpactAnalyzer
 from app.domain.workflow.models import PlanAction, PlanSource, PlanValidationError, ReportExtraction
-from app.domain.workflow.service import WorkflowService
 
 
 class Models:
@@ -114,8 +114,7 @@ def test_gemini_repair_prompt_is_authoritative_and_has_one_model_attempt():
     state = OperationalStateService(venue)
     state.set_asset_status("A_LIFT_2", AssetStatus.OUT_OF_SERVICE)
     state.set_asset_status("A_CORRIDOR_W3", AssetStatus.OUT_OF_SERVICE)
-    workflow = WorkflowService(venue, state, RoutingService(venue), LocalDemoAIProvider())
-    impact = workflow._analyse_impact("A_LIFT_2")
+    impact = ImpactAnalyzer(venue, state, RoutingService(venue)).analyze("A_LIFT_2")
     local = LocalDemoAIProvider()
     valid_repair = local.propose_plan([], [], impact, venue)
     invalid = valid_repair.model_copy(deep=True)

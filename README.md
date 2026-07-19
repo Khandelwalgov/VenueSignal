@@ -105,8 +105,12 @@ See [testing](docs/testing.md), [accessibility](docs/accessibility.md), and the 
 
 ## Deployment readiness
 
-The deployed topology is Vercel for the Next.js browser app and Render for FastAPI. The browser uses Firebase Authentication only; Render verifies the resulting ID token and owns all Firestore and Gemini access. Follow [DEPLOY.md](DEPLOY.md) for the exact Render fields shown in the dashboard, separated Render/Vercel environment variables, Firebase Admin secret-file setup, Vercel redeployment, and operator-only base-scenario reset. Cloud Run remains an optional alternative documented in [docs/live-deployment.md](docs/live-deployment.md).
+The final topology is Vercel for the Next.js browser app and Render for FastAPI. The browser uses Firebase Authentication only; Render verifies the resulting ID token and owns all Firestore and Gemini access. Follow [DEPLOY.md](DEPLOY.md) for the exact Render fields, separated Render/Vercel environment variables, Firebase Admin secret-file setup, Vercel redeployment, and operator-only base-scenario reset.
 
-Production deployment requires custom role claims, deployed secrets, a final frontend origin, and operational/security/privacy review. Adapter code, emulator configuration, Cloud Build, non-root container, and environment templates are included. Follow the project-specific [live deployment runbook](docs/live-deployment.md), then review [assumptions and limitations](docs/assumptions-and-limitations.md) and the [submission checklist](docs/submission-checklist.md).
+Production deployment requires custom role claims, Render secrets, an exact Vercel origin, and operational/security/privacy review. The Render Blueprint and separate backend/frontend environment examples are included. Follow the project-specific [live deployment runbook](docs/live-deployment.md), then review [assumptions and limitations](docs/assumptions-and-limitations.md) and the [submission checklist](docs/submission-checklist.md).
+
+### Public hackathon demo access
+
+The login screen can show intentionally public, disposable judge credentials only when `NEXT_PUBLIC_ENABLE_PUBLIC_DEMO_CREDENTIALS=true` and both credential values are supplied in Vercel Production environment variables. Firebase sign-in is still required, the backend still verifies the bearer token, and the `CONTROLLER` role still comes from a server-verified custom claim. The account must contain only synthetic demo data and should be rotated or removed after judging. No password is stored in this repository.
 
 AI development tools were used to audit, implement, and test the repository. Generated changes remain subject to the same deterministic validators and automated quality gates as hand-written changes.

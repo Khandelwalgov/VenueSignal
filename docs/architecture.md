@@ -34,4 +34,4 @@ Plan provenance is part of the domain model: `GEMINI`, `GEMINI_REPAIRED`, `DETER
 
 `Firebase client sign-in → bearer ID token → security/rate middleware → Firebase Admin verification → controller/viewer dependency → typed route → domain validation → repository/provider adapter → audit`
 
-Cloud Run uses a non-root container, Secret Manager supplies the Gemini key, Firestore client rules deny direct access, and production disables OpenAPI UI.
+Vercel hosts the browser application and Render hosts FastAPI. Render supplies the Gemini key and Firebase Admin credentials, Firestore client rules deny direct access, and production disables OpenAPI UI.
